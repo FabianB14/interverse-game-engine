@@ -1,0 +1,128 @@
+const templates = [
+  { id: "platformer", name: "2D Platformer", description: "Movement, jumping, collectibles, and a finish line.", mark: "P" },
+  { id: "top-down", name: "Top-down Adventure", description: "A map, player movement, interaction, and dialogue.", mark: "T" },
+  { id: "puzzle", name: "Puzzle Room", description: "A compact scene for rules, logic, and progression.", mark: "R" }
+];
+
+const storageKey = "interverse-studio-projects";
+const projectGrid = document.querySelector("#project-grid");
+const projectCount = document.querySelector("#project-count");
+const emptyState = document.querySelector("#empty-state");
+const projectCardTemplate = document.querySelector("#project-card-template");
+const projectDialog = document.querySelector("#project-dialog");
+const projectForm = document.querySelector("#project-form");
+const installBanner = document.querySelector("#install-banner");
+const installButton = document.querySelector("#install-button");
+const installCopy = document.querySelector("#install-copy");
+let deferredInstallPrompt;
+
+function readProjects() {
+  try { return JSON.parse(localStorage.getItem(storageKey)) || []; } catch { return []; }
+}
+
+function saveProjects(projects) { localStorage.setItem(storageKey, JSON.stringify(projects)); }
+
+function formatDate(value) {
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function renderProjects(query = "") {
+  const projects = readProjects().filter((project) => project.name.toLowerCase().includes(query.toLowerCase()));
+  projectGrid.replaceChildren();
+  projectCount.textContent = `${projects.length} ${projects.length === 1 ? "project" : "projects"}`;
+  emptyState.hidden = projects.length !== 0 || query.length !== 0;
+  projects.forEach((project) => {
+    const card = projectCardTemplate.content.cloneNode(true);
+    card.querySelector(".project-template").textContent = project.template;
+    card.querySelector("h2").textContent = project.name;
+    card.querySelector(".project-date").textContent = `Created ${formatDate(project.createdAt)}`;
+    card.querySelector(".delete-project").addEventListener("click", () => {
+      saveProjects(readProjects().filter((item) => item.id !== project.id));
+      renderProjects(document.querySelector("#project-search").value);
+    });
+    projectGrid.append(card);
+  });
+}
+
+function renderTemplates() {
+  const templateGrid = document.querySelector("#template-grid");
+  const optionGrid = document.querySelector("#template-options");
+  templates.forEach((template, index) => {
+    const card = document.createElement("article");
+    card.className = "template-card";
+    card.innerHTML = `<div class="template-icon">${template.mark}</div><h3>${template.name}</h3><p>${template.description}</p><button class="text-button" type="button">Use template</button>`;
+    card.querySelector("button").addEventListener("click", () => openProjectDialog(template.id));
+    templateGrid.append(card);
+    const option = document.createElement("label");
+    option.className = "template-option";
+    option.innerHTML = `<input type="radio" name="template" value="${template.id}" ${index === 0 ? "checked" : ""} /><span><strong>${template.name}</strong><small>${template.description}</small></span>`;
+    optionGrid.append(option);
+  });
+}
+
+function openProjectDialog(templateId = "platformer") {
+  projectForm.reset();
+  const option = document.querySelector(`input[name="template"][value="${templateId}"]`);
+  if (option) option.checked = true;
+  projectDialog.showModal();
+  document.querySelector("#project-name").focus();
+}
+
+function showView(view) {
+  document.querySelectorAll(".nav-item").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+  document.querySelectorAll("[data-view-content]").forEach((section) => {
+    const active = section.dataset.viewContent === view;
+    section.hidden = !active;
+    section.classList.toggle("active", active);
+  });
+  document.querySelector("#view-title").textContent = ({ projects: "Your projects", templates: "Templates", learn: "Learn" })[view];
+}
+
+function setupInstallPrompt() {
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isStandalone || sessionStorage.getItem("interverse-install-dismissed")) return;
+  if (isIos) {
+    installCopy.textContent = "In Safari, use Share and then choose Add to Home Screen.";
+    installButton.hidden = true;
+    installBanner.hidden = false;
+  }
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installBanner.hidden = false;
+  });
+  installButton.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = undefined;
+    installBanner.hidden = true;
+  });
+  document.querySelector("#dismiss-install").addEventListener("click", () => {
+    sessionStorage.setItem("interverse-install-dismissed", "true");
+    installBanner.hidden = true;
+  });
+}
+
+document.querySelectorAll(".nav-item").forEach((button) => button.addEventListener("click", () => showView(button.dataset.view)));
+document.querySelector("#new-project-button").addEventListener("click", () => openProjectDialog());
+document.querySelectorAll("[data-open-project-dialog]").forEach((button) => button.addEventListener("click", () => openProjectDialog()));
+document.querySelector("#close-dialog").addEventListener("click", () => projectDialog.close());
+document.querySelector("#cancel-dialog").addEventListener("click", () => projectDialog.close());
+document.querySelector("#project-search").addEventListener("input", (event) => renderProjects(event.target.value));
+projectForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const formData = new FormData(projectForm);
+  const template = templates.find((item) => item.id === formData.get("template"));
+  const project = { id: crypto.randomUUID(), name: formData.get("project-name").trim(), template: template.name, createdAt: Date.now() };
+  saveProjects([project, ...readProjects()]);
+  projectDialog.close();
+  showView("projects");
+  renderProjects();
+});
+
+renderTemplates();
+renderProjects();
+setupInstallPrompt();
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));

@@ -14,9 +14,12 @@ GitHub Pages is enough for:
 
 GitHub Pages does not run backend code. It only serves static files.
 
+The current Studio PWA keeps project setup data in the browser, so it does not need an account system, Render, or a database. It is installable on supported Windows browsers and via Safari's **Add to Home Screen** action on iPhone and iPad.
+
 Recommended early use:
 
 - Host the documentation site.
+- Host the installable Interverse Studio PWA from the `/docs` folder.
 - Publish the project roadmap.
 - Add simple demos later if the engine supports browser exports.
 
@@ -74,4 +77,3 @@ Likely future options:
 2. Move to Vercel if the site needs richer previews, routing, or serverless helpers.
 3. Add Render only when Interverse has a real backend feature.
 4. Add PostgreSQL only when there is shared product data to store.
-
