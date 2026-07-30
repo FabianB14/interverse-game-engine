@@ -14,6 +14,11 @@ const propertyInputs = {
   width: document.querySelector("#property-width"),
   height: document.querySelector("#property-height")
 };
+const propertyNameInput = document.querySelector("#property-name");
+const hierarchy = document.querySelector("#scene-hierarchy");
+const validationPanel = document.querySelector("#scene-validation");
+const undoButton = document.querySelector("#undo-scene");
+const redoButton = document.querySelector("#redo-scene");
 const spriteAssetSelect = document.querySelector("#sprite-asset");
 const spriteImages = new Map();
 
@@ -36,10 +41,40 @@ const defaultScene = {
 let scene = loadScene();
 let tool = "select";
 let selected = null;
+const history = [];
+let historyIndex = -1;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
 function loadScene() { try { return JSON.parse(localStorage.getItem(activeSceneKey())) || clone(defaultScene); } catch { return clone(defaultScene); } }
-function saveScene() { localStorage.setItem(activeSceneKey(), JSON.stringify(scene)); document.querySelector("#save-status").textContent = "Saved in this browser"; }
+function saveScene(message = "Saved in this browser") { localStorage.setItem(activeSceneKey(), JSON.stringify(scene)); document.querySelector("#save-status").textContent = message; }
+function objectLabel(type, index, object) {
+  if (object?.name) return object.name;
+  const label = ({ player: "Player", goal: "Goal", solid: "Wall", collectible: "Beacon", sprite: "Sprite" })[type];
+  return index === undefined ? label : `${label} ${index + 1}`;
+}
+function recordHistory() {
+  const snapshot = clone(scene);
+  if (historyIndex >= 0 && JSON.stringify(history[historyIndex]) === JSON.stringify(snapshot)) return;
+  history.splice(historyIndex + 1);
+  history.push(snapshot);
+  if (history.length > 60) history.shift();
+  historyIndex = history.length - 1;
+  updateHistoryControls();
+}
+function updateHistoryControls() { undoButton.disabled = historyIndex <= 0; redoButton.disabled = historyIndex >= history.length - 1; }
+function refreshEditor() { refreshInspector(); refreshHierarchy(); showValidation(validateScene()); draw(); }
+function applySceneChange(message) { recordHistory(); saveScene(message); refreshEditor(); }
+function restoreHistory(index) {
+  if (index < 0 || index >= history.length) return;
+  historyIndex = index;
+  scene = clone(history[historyIndex]);
+  selected = null;
+  saveScene(index < history.length - 1 ? "Undo applied" : "Redo applied");
+  updateHistoryControls();
+  refreshEditor();
+}
+function undo() { restoreHistory(historyIndex - 1); }
+function redo() { restoreHistory(historyIndex + 1); }
 function fileName(name) { return name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "interverse-project"; }
 function downloadProject() {
   const packageData = { format: "interverse.project/v1", name: project.name, template: project.templateId || "top-down", entryScene: "scenes/main.scene.json", scene };
@@ -103,8 +138,45 @@ function refreshInspector() {
   emptyInspector.hidden = Boolean(object);
   if (!object) return;
   document.querySelector("#object-type").textContent = selected.type === "solid" ? "Wall" : selected.type[0].toUpperCase() + selected.type.slice(1);
+  propertyNameInput.value = object.name || "";
   Object.entries(propertyInputs).forEach(([key, input]) => { input.value = object[key]; });
   document.querySelector("#delete-object").hidden = selected.type === "player" || selected.type === "goal";
+  document.querySelector("#duplicate-object").hidden = selected.type === "player" || selected.type === "goal";
+}
+
+function refreshHierarchy() {
+  hierarchy.replaceChildren();
+  const entries = [
+    { type: "player", object: scene.player },
+    { type: "goal", object: scene.goal },
+    ...(scene.sprites || []).map((object, index) => ({ type: "sprite", index, object })),
+    ...scene.collectibles.map((object, index) => ({ type: "collectible", index, object })),
+    ...scene.solids.map((object, index) => ({ type: "solid", index, object }))
+  ];
+  entries.forEach((entry) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "hierarchy-item";
+    button.textContent = objectLabel(entry.type, entry.index, entry.object);
+    button.classList.toggle("active", selected?.type === entry.type && selected?.index === entry.index);
+    button.addEventListener("click", () => { selected = { type: entry.type, index: entry.index }; refreshEditor(); });
+    hierarchy.append(button);
+  });
+}
+
+function validateScene() {
+  const issues = [];
+  if (!scene.world || !Number.isFinite(scene.world.width) || !Number.isFinite(scene.world.height)) issues.push("Scene needs valid world dimensions.");
+  if (!scene.player) issues.push("Scene needs a player.");
+  if (!scene.goal) issues.push("Scene needs a goal.");
+  const objects = [scene.player, scene.goal, ...(scene.sprites || []), ...scene.collectibles, ...scene.solids].filter(Boolean);
+  if (objects.some((object) => !Number.isFinite(object.x) || !Number.isFinite(object.y) || !Number.isFinite(object.width) || !Number.isFinite(object.height) || object.width <= 0 || object.height <= 0)) issues.push("Every object needs a positive position and size.");
+  return issues;
+}
+
+function showValidation(issues) {
+  validationPanel.hidden = issues.length === 0;
+  validationPanel.textContent = issues.join(" ");
 }
 
 function selectAt(point) {
@@ -153,9 +225,8 @@ function refreshSpriteAssets() {
 canvas.addEventListener("click", (event) => {
   const bounds = canvas.getBoundingClientRect();
   const point = { x: (event.clientX - bounds.left) * canvas.width / bounds.width, y: (event.clientY - bounds.top) * canvas.height / bounds.height };
-  if (tool === "select") selectAt(point);
-  else if (addObject(point) !== false) saveScene();
-  refreshInspector(); draw();
+  if (tool === "select") { selectAt(point); refreshEditor(); }
+  else if (addObject(point) !== false) applySceneChange();
 });
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => {
@@ -167,31 +238,56 @@ function setTool(nextTool) {
   document.querySelectorAll("[data-tool]").forEach((item) => item.classList.toggle("active", item.dataset.tool === tool));
 }
 
-Object.values(propertyInputs).forEach((input) => input.addEventListener("input", () => {
+function updateSelectedProperties() {
   const object = selectedObject();
   if (!object) return;
   Object.entries(propertyInputs).forEach(([key, field]) => { object[key] = Number(field.value); });
-  saveScene(); draw();
-}));
+  object.name = propertyNameInput.value.trim();
+  refreshHierarchy();
+  draw();
+}
 
-document.querySelector("#delete-object").addEventListener("click", () => {
+[propertyNameInput, ...Object.values(propertyInputs)].forEach((input) => {
+  input.addEventListener("input", updateSelectedProperties);
+  input.addEventListener("change", () => { if (selectedObject()) applySceneChange(); });
+});
+
+function deleteSelected() {
   if (!selected || selected.type === "player" || selected.type === "goal") return;
   scene[`${selected.type}s`].splice(selected.index, 1);
   selected = null;
-  saveScene(); refreshInspector(); draw();
-});
+  applySceneChange();
+}
+
+function duplicateSelected() {
+  const object = selectedObject();
+  if (!object || selected.type === "player" || selected.type === "goal") return;
+  const duplicate = { ...clone(object), x: snap(object.x + gridSize), y: snap(object.y + gridSize), name: `${objectLabel(selected.type, selected.index, object)} Copy` };
+  const objects = scene[`${selected.type}s`];
+  objects.push(duplicate);
+  selected = { type: selected.type, index: objects.length - 1 };
+  applySceneChange("Duplicated object");
+}
+
+document.querySelector("#delete-object").addEventListener("click", deleteSelected);
+document.querySelector("#duplicate-object").addEventListener("click", duplicateSelected);
 
 document.querySelector("#reset-scene").addEventListener("click", () => {
-  scene = clone(defaultScene); selected = null; saveScene(); refreshInspector(); draw();
+  scene = clone(defaultScene); selected = null; applySceneChange("Scene reset");
 });
 
 document.querySelector("#preview-scene").addEventListener("click", () => {
+  const issues = validateScene();
+  showValidation(issues);
+  if (issues.length) { document.querySelector("#save-status").textContent = "Fix scene issues before previewing"; return; }
   sessionStorage.setItem(previewKey, JSON.stringify(scene));
   sessionStorage.setItem(previewContextKey, JSON.stringify({ projectId, returnUrl: window.location.href }));
   window.location.assign("../play/");
 });
 
 document.querySelector("#export-scene").addEventListener("click", downloadProject);
+undoButton.addEventListener("click", undo);
+redoButton.addEventListener("click", redo);
 document.querySelector("#import-scene").addEventListener("click", () => document.querySelector("#scene-import").click());
 document.querySelector("#scene-import").addEventListener("change", async (event) => {
   const [file] = event.target.files;
@@ -233,7 +329,18 @@ spriteDropZone.addEventListener("drop", async (event) => {
   await importSpriteImages(Array.from(event.dataTransfer.files));
 });
 
+window.addEventListener("keydown", (event) => {
+  const editable = event.target.matches("input, select, textarea");
+  if (editable) return;
+  const command = event.ctrlKey || event.metaKey;
+  if (command && event.key.toLowerCase() === "z") { event.preventDefault(); if (event.shiftKey) redo(); else undo(); return; }
+  if (command && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); return; }
+  if (command && event.key.toLowerCase() === "d") { event.preventDefault(); duplicateSelected(); return; }
+  if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); deleteSelected(); return; }
+  if (event.key === "Escape") { selected = null; setTool("select"); refreshEditor(); }
+});
+
 document.querySelector("#project-name").textContent = project.name;
 refreshSpriteAssets();
-refreshInspector();
-draw();
+recordHistory();
+refreshEditor();
