@@ -1,0 +1,25 @@
+# Build output
+build/
+dist/
+out/
+bin/
+obj/
+
+# Dependencies and package managers
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Editor and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs and local config
+*.log
+.env
+.env.*
+!.env.example
+
