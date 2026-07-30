@@ -20,6 +20,7 @@ Recommended early use:
 
 - Host the documentation site.
 - Host the installable Interverse Studio PWA from the `/docs` folder.
+- Publish the browser engine demo at `/play/` alongside the Studio workspace.
 - Publish the project roadmap.
 - Add simple demos later if the engine supports browser exports.
 

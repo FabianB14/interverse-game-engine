@@ -20,11 +20,12 @@
           <button class="nav-item active" type="button" data-view="projects">Projects</button>
           <button class="nav-item" type="button" data-view="templates">Templates</button>
           <button class="nav-item" type="button" data-view="learn">Learn</button>
+          <a class="nav-item" href="play/">Run engine demo</a>
         </nav>
         <div class="sidebar-footer"><a href="roadmap.md">Roadmap</a><a href="architecture.md">Architecture</a></div>
       </aside>
       <main>
-        <header class="topbar"><div><p class="eyebrow">Interverse Studio</p><h1 id="view-title">Your projects</h1></div><button class="primary-button" id="new-project-button" type="button">New project</button></header>
+        <header class="topbar"><div><p class="eyebrow">Interverse Studio</p><h1 id="view-title">Your projects</h1></div><div class="topbar-actions"><a class="secondary-button" href="play/">Run engine demo</a><button class="primary-button" id="new-project-button" type="button">New project</button></div></header>
         <section id="install-banner" class="install-banner" hidden aria-live="polite"><div><strong>Keep Studio close</strong><p id="install-copy">Install Interverse Studio for a focused, app-like workspace.</p></div><div class="install-actions"><button class="text-button" id="dismiss-install" type="button">Not now</button><button class="secondary-button" id="install-button" type="button">Install</button></div></section>
         <section class="content-view active" data-view-content="projects"><div class="project-toolbar"><p id="project-count" class="muted"></p><label class="search-field"><span class="sr-only">Search projects</span><input id="project-search" type="search" placeholder="Search projects" autocomplete="off" /></label></div><div id="project-grid" class="project-grid"></div><section id="empty-state" class="empty-state" hidden><img src="assets/interverse-mark.svg" alt="" width="72" height="72" /><h2>Start your first game</h2><p>Choose a template, name your project, and begin with a scene that already runs.</p><button class="primary-button" type="button" data-open-project-dialog>New project</button></section></section>
         <section class="content-view" data-view-content="templates" hidden><div class="section-heading"><p class="eyebrow">Starting points</p><h2>Templates made for the first playable build</h2></div><div id="template-grid" class="template-grid"></div></section>
