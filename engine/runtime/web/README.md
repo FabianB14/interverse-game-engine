@@ -11,6 +11,8 @@ It currently provides:
 - Sprite components backed by portable image sources.
 - Axis-aligned solid collision.
 - Collectible and goal triggers.
+- Hazard, checkpoint, and checkpoint-respawn gameplay zones.
+- Persistent elapsed-time and reset-count state for playtests.
 - Pause, resume, restart, state snapshots, and gameplay event hooks for playtests.
 
 The runtime is a behavioral reference, not the final platform strategy. The same scene and gameplay boundaries can later be implemented by the native runtime for Windows and mobile exports.

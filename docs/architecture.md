@@ -64,6 +64,7 @@ Its initial contract is intentionally narrow:
 - The renderer draws the current state without owning gameplay rules.
 - Collision and triggers are shared runtime behavior rather than scene-specific code.
 - The playtest API owns pause, restart, serializable state snapshots, and gameplay events; the surrounding app can decide how to save or present them.
+- Scene zones provide reusable checkpoint and hazard behavior; the runtime owns respawn handling while scenes only describe their rectangles.
 
 `examples/first-game/` is the integration test for that contract. It should remain small enough to run and understand without a full editor.
 

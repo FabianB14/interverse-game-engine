@@ -30,11 +30,13 @@ let project = activeProject();
 
 const defaultScene = {
   world: { width: 960, height: 640 },
-  palette: { ground: "#e8f1f8", grid: "#d4e1ec", wall: "#28547e", wallHighlight: "#5d91bd", player: "#e45b50", beacon: "#f2b94b", goal: "#3baf89", goalComplete: "#194d42" },
+  palette: { ground: "#e8f1f8", grid: "#d4e1ec", wall: "#28547e", wallHighlight: "#5d91bd", player: "#e45b50", beacon: "#f2b94b", goal: "#3baf89", goalComplete: "#194d42", hazard: "#d64d4d", checkpoint: "#3d7fb5", checkpointActive: "#255b87" },
   player: { x: 96, y: 160, width: 30, height: 30, speed: 240 },
   goal: { x: 800, y: 448, width: 96, height: 96 },
   collectibles: [{ x: 208, y: 205, width: 22, height: 22 }, { x: 590, y: 270, width: 22, height: 22 }],
   sprites: [],
+  hazards: [],
+  checkpoints: [],
   solids: [{ x: 0, y: 0, width: 960, height: 56 }, { x: 0, y: 584, width: 960, height: 56 }, { x: 0, y: 0, width: 56, height: 640 }, { x: 904, y: 0, width: 56, height: 640 }, { x: 320, y: 104, width: 64, height: 288 }, { x: 544, y: 320, width: 256, height: 64 }]
 };
 
@@ -46,11 +48,26 @@ const history = [];
 let historyIndex = -1;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
-function loadScene() { try { return JSON.parse(localStorage.getItem(activeSceneKey())) || clone(defaultScene); } catch { return clone(defaultScene); } }
+function loadScene() {
+  try {
+    const savedScene = JSON.parse(localStorage.getItem(activeSceneKey()));
+    if (!savedScene) return clone(defaultScene);
+    return {
+      ...clone(defaultScene),
+      ...savedScene,
+      palette: { ...defaultScene.palette, ...(savedScene.palette || {}) },
+      sprites: savedScene.sprites || [],
+      hazards: savedScene.hazards || [],
+      checkpoints: savedScene.checkpoints || []
+    };
+  } catch {
+    return clone(defaultScene);
+  }
+}
 function saveScene(message = "Saved in this browser") { localStorage.setItem(activeSceneKey(), JSON.stringify(scene)); document.querySelector("#save-status").textContent = message; }
 function objectLabel(type, index, object) {
   if (object?.name) return object.name;
-  const label = ({ player: "Player", goal: "Goal", solid: "Wall", collectible: "Beacon", sprite: "Sprite" })[type];
+  const label = ({ player: "Player", goal: "Goal", solid: "Wall", collectible: "Beacon", sprite: "Sprite", hazard: "Hazard", checkpoint: "Checkpoint" })[type];
   return index === undefined ? label : `${label} ${index + 1}`;
 }
 function recordHistory() {
@@ -116,6 +133,8 @@ function drawSprite(sprite) {
   if (image.complete && image.naturalWidth > 0) context.drawImage(image, sprite.x, sprite.y, sprite.width, sprite.height);
   else { context.fillStyle = "#b5c7d9"; context.fillRect(sprite.x, sprite.y, sprite.width, sprite.height); }
 }
+function drawHazard(hazard) { context.fillStyle = scene.palette.hazard || "#d64d4d"; context.fillRect(hazard.x, hazard.y, hazard.width, hazard.height); context.fillStyle = "#ffffff55"; for (let x = hazard.x - hazard.height; x < hazard.x + hazard.width; x += 18) { context.beginPath(); context.moveTo(x, hazard.y + hazard.height); context.lineTo(x + hazard.height, hazard.y); context.lineTo(x + hazard.height * 2, hazard.y + hazard.height); context.fill(); } }
+function drawCheckpoint(checkpoint) { drawRoundedRect(checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height, 6, scene.palette.checkpoint || "#3d7fb5"); context.fillStyle = "#ffffffaa"; context.fillRect(checkpoint.x + checkpoint.width / 2 - 2, checkpoint.y + 7, 4, checkpoint.height - 14); context.fillRect(checkpoint.x + checkpoint.width / 2 + 2, checkpoint.y + 8, checkpoint.width / 2 - 8, 10); }
 function drawSelection(object) { if (!object) return; context.strokeStyle = "#0e68d8"; context.lineWidth = 3; context.setLineDash([6, 4]); context.strokeRect(object.x - 4, object.y - 4, object.width + 8, object.height + 8); context.setLineDash([]); }
 
 function draw() {
@@ -126,6 +145,8 @@ function draw() {
   for (let x = 0; x <= canvas.width; x += gridSize) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, canvas.height); context.stroke(); }
   for (let y = 0; y <= canvas.height; y += gridSize) { context.beginPath(); context.moveTo(0, y); context.lineTo(canvas.width, y); context.stroke(); }
   (scene.sprites || []).forEach(drawSprite);
+  (scene.checkpoints || []).forEach(drawCheckpoint);
+  (scene.hazards || []).forEach(drawHazard);
   scene.solids.forEach((solid) => { drawRoundedRect(solid.x, solid.y, solid.width, solid.height, 7, scene.palette.wall); context.fillStyle = scene.palette.wallHighlight; context.fillRect(solid.x + 5, solid.y + 5, Math.max(0, solid.width - 10), 4); });
   scene.collectibles.forEach(drawDiamond);
   drawRoundedRect(scene.goal.x, scene.goal.y, scene.goal.width, scene.goal.height, 10, scene.palette.goal);
@@ -152,6 +173,8 @@ function refreshHierarchy() {
     { type: "player", object: scene.player },
     { type: "goal", object: scene.goal },
     ...(scene.sprites || []).map((object, index) => ({ type: "sprite", index, object })),
+    ...(scene.checkpoints || []).map((object, index) => ({ type: "checkpoint", index, object })),
+    ...(scene.hazards || []).map((object, index) => ({ type: "hazard", index, object })),
     ...scene.collectibles.map((object, index) => ({ type: "collectible", index, object })),
     ...scene.solids.map((object, index) => ({ type: "solid", index, object }))
   ];
@@ -171,7 +194,7 @@ function validateScene() {
   if (!scene.world || !Number.isFinite(scene.world.width) || !Number.isFinite(scene.world.height)) issues.push("Scene needs valid world dimensions.");
   if (!scene.player) issues.push("Scene needs a player.");
   if (!scene.goal) issues.push("Scene needs a goal.");
-  const objects = [scene.player, scene.goal, ...(scene.sprites || []), ...scene.collectibles, ...scene.solids].filter(Boolean);
+  const objects = [scene.player, scene.goal, ...(scene.sprites || []), ...(scene.checkpoints || []), ...(scene.hazards || []), ...scene.collectibles, ...scene.solids].filter(Boolean);
   if (objects.some((object) => !Number.isFinite(object.x) || !Number.isFinite(object.y) || !Number.isFinite(object.width) || !Number.isFinite(object.height) || object.width <= 0 || object.height <= 0)) issues.push("Every object needs a positive position and size.");
   return issues;
 }
@@ -186,6 +209,8 @@ function selectAt(point) {
     { type: "player", object: scene.player },
     { type: "goal", object: scene.goal },
     ...(scene.sprites || []).map((object, index) => ({ type: "sprite", index, object })),
+    ...(scene.checkpoints || []).map((object, index) => ({ type: "checkpoint", index, object })),
+    ...(scene.hazards || []).map((object, index) => ({ type: "hazard", index, object })),
     ...scene.collectibles.map((object, index) => ({ type: "collectible", index, object })),
     ...scene.solids.map((object, index) => ({ type: "solid", index, object }))
   ];
@@ -197,6 +222,8 @@ function addObject(point) {
   if (tool === "wall") { scene.solids.push({ x: boundedPosition(point.x, 64, "width"), y: boundedPosition(point.y, 64, "height"), width: 64, height: 64 }); selected = { type: "solid", index: scene.solids.length - 1 }; }
   if (tool === "beacon") { scene.collectibles.push({ x: boundedPosition(point.x, 22, "width"), y: boundedPosition(point.y, 22, "height"), width: 22, height: 22 }); selected = { type: "collectible", index: scene.collectibles.length - 1 }; }
   if (tool === "goal") { scene.goal = { ...scene.goal, x: boundedPosition(point.x, scene.goal.width, "width"), y: boundedPosition(point.y, scene.goal.height, "height") }; selected = { type: "goal" }; }
+  if (tool === "hazard") { scene.hazards ||= []; scene.hazards.push({ x: boundedPosition(point.x, 96, "width"), y: boundedPosition(point.y, 32, "height"), width: 96, height: 32 }); selected = { type: "hazard", index: scene.hazards.length - 1 }; }
+  if (tool === "checkpoint") { scene.checkpoints ||= []; scene.checkpoints.push({ x: boundedPosition(point.x, 40, "width"), y: boundedPosition(point.y, 56, "height"), width: 40, height: 56 }); selected = { type: "checkpoint", index: scene.checkpoints.length - 1 }; }
   if (tool === "sprite") {
     const asset = window.InterverseAssets.list().find((item) => item.id === spriteAssetSelect.value);
     if (!asset) { document.querySelector("#save-status").textContent = "Choose a sprite image first"; return; }

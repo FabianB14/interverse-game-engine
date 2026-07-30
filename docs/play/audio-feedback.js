@@ -26,6 +26,8 @@ export function createAudioFeedback() {
   return {
     play(event) {
       if (event.type === "pickup") tone(620, 0.09, 0.08);
+      if (event.type === "checkpoint") tone(440, 0.1, 0.08);
+      if (event.type === "respawn") tone(170, 0.14, 0.09);
       if (event.type === "complete") { tone(520, 0.12, 0.09); window.setTimeout(() => tone(780, 0.2, 0.09), 110); }
     }
   };

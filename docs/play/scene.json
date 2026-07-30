@@ -8,7 +8,10 @@
     "player": "#e45b50",
     "beacon": "#f2b94b",
     "goal": "#3baf89",
-    "goalComplete": "#194d42"
+    "goalComplete": "#194d42",
+    "hazard": "#d64d4d",
+    "checkpoint": "#3d7fb5",
+    "checkpointActive": "#255b87"
   },
   "player": { "x": 104, "y": 168, "width": 30, "height": 30, "speed": 240 },
   "goal": { "x": 1300, "y": 810, "width": 98, "height": 98 },
@@ -17,6 +20,12 @@
     { "x": 615, "y": 206, "width": 22, "height": 22 },
     { "x": 782, "y": 635, "width": 22, "height": 22 },
     { "x": 1206, "y": 794, "width": 22, "height": 22 }
+  ],
+  "checkpoints": [
+    { "x": 686, "y": 580, "width": 40, "height": 56 }
+  ],
+  "hazards": [
+    { "x": 760, "y": 720, "width": 164, "height": 32 }
   ],
   "solids": [
     { "x": 0, "y": 0, "width": 1536, "height": 56 },
