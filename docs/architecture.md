@@ -66,6 +66,10 @@ Its initial contract is intentionally narrow:
 
 `examples/first-game/` is the integration test for that contract. It should remain small enough to run and understand without a full editor.
 
+## First Scene Editor
+
+`docs/editor/` is the first creator-facing scene editor. It edits a scene in the same JSON shape consumed by the runtime, stores its local working copy in the browser, and opens that exact data in the web runtime preview. The initial toolset is deliberately focused on selection, walls, collectibles, and a goal so the editor validates the workflow without hiding it behind a large tool surface.
+
 ## Web Studio Boundary
 
 `docs/` contains Interverse Studio, an installable Progressive Web App that introduces the product from any browser. It owns project setup, templates, learning material, and future web previews.

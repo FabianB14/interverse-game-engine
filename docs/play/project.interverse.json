@@ -1,0 +1,6 @@
+{
+  "format": "interverse.project/v0",
+  "name": "Signal Garden",
+  "template": "top-down",
+  "entryScene": "scene.json"
+}

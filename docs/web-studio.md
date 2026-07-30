@@ -9,6 +9,7 @@ Interverse Studio is the browser-based companion to the Interverse Game Engine. 
 - An install prompt on supported Windows browsers.
 - iOS installation guidance for Safari's **Add to Home Screen** workflow.
 - Offline access to the Studio app shell after its first visit.
+- A browser build of the engine reference runtime at `/play/`.
 
 ## Platform Promise
 

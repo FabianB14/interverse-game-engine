@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101827" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Interverse Scene Editor</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" href="../assets/interverse-mark.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../assets/interverse-mark-180.png" />
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body>
+    <header class="editor-header">
+      <a class="brand" href="../"><img src="../assets/interverse-mark.svg" alt="" width="32" height="32" />Interverse</a>
+      <div><p class="eyebrow">Scene editor</p><h1>Signal Garden</h1></div>
+      <div class="header-actions"><button class="secondary-button" id="reset-scene" type="button">Reset</button><button class="primary-button" id="preview-scene" type="button">Preview</button></div>
+    </header>
+    <main class="editor-layout">
+      <aside class="tool-panel" aria-label="Scene tools">
+        <p class="panel-label">Tools</p>
+        <div class="tool-list">
+          <button class="tool-button active" type="button" data-tool="select">Select</button>
+          <button class="tool-button" type="button" data-tool="wall">Wall</button>
+          <button class="tool-button" type="button" data-tool="beacon">Beacon</button>
+          <button class="tool-button" type="button" data-tool="goal">Goal</button>
+        </div>
+      </aside>
+      <section class="scene-workspace" aria-label="Scene workspace">
+        <canvas id="scene-canvas" width="960" height="640" aria-label="Editable game scene"></canvas>
+        <p id="save-status" class="save-status" aria-live="polite">Saved locally</p>
+      </section>
+      <aside class="inspector-panel" aria-label="Inspector">
+        <p class="panel-label">Inspector</p>
+        <div id="empty-inspector" class="empty-inspector">Select an object</div>
+        <form id="object-properties" hidden>
+          <p id="object-type" class="object-type"></p>
+          <label>X<input id="property-x" type="number" step="1" /></label>
+          <label>Y<input id="property-y" type="number" step="1" /></label>
+          <label>Width<input id="property-width" type="number" min="16" step="1" /></label>
+          <label>Height<input id="property-height" type="number" min="16" step="1" /></label>
+          <button class="danger-button" id="delete-object" type="button">Delete</button>
+        </form>
+      </aside>
+    </main>
+    <script src="editor.js"></script>
+  </body>
+</html>
