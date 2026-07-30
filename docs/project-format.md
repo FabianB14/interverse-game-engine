@@ -25,7 +25,19 @@ An Interverse project is one portable JSON file. It identifies the project, reco
 | `entryScene` | Relative path to the first scene the runtime should load. |
 | `scene` | The complete editable scene data used by the current web editor and preview runtime. |
 
-The portable browser export keeps one scene inside the project file. Imported assets, build output, and editor preferences remain separate concerns. A future native project can use the same fields while storing larger scenes and assets as files beside its manifest.
+### Scene Sprites
+
+A scene can include a `sprites` array. Each sprite stores its transform and image source directly, allowing a portable project export to keep rendering without depending on the browser's asset library.
+
+```json
+{
+  "sprites": [
+    { "x": 128, "y": 96, "width": 64, "height": 64, "source": "data:image/png;base64,..." }
+  ]
+}
+```
+
+The portable browser export keeps one scene inside the project file. The browser asset library stores local image copies for reuse while editing; placed sprites keep their own source in the scene so exports are self-contained. Build output and editor preferences remain separate concerns. A future native project can use the same fields while storing larger scenes and assets as files beside its manifest.
 
 ## Current Workflow
 

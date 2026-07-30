@@ -6,6 +6,8 @@ Interverse Studio is the browser-based companion to the Interverse Game Engine. 
 
 - Project setup stored locally in the browser.
 - Three focused 2D project templates.
+- Local image import and an asset library for scene sprites.
+- Sprite placement and rendering in the scene editor and web preview.
 - An install prompt on supported Windows browsers.
 - iOS installation guidance for Safari's **Add to Home Screen** workflow.
 - Offline access to the Studio app shell after its first visit.

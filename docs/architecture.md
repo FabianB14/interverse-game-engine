@@ -70,6 +70,10 @@ Its initial contract is intentionally narrow:
 
 `docs/editor/` is the first creator-facing scene editor. It edits a scene in the same JSON shape consumed by the runtime, stores a separate working copy for each Studio project in the browser, and opens that exact data in the web runtime preview. It can also export and restore a portable project file, keeping the initial workflow usable without a backend. The toolset is deliberately focused on selection, walls, collectibles, and a goal so the editor validates the workflow without hiding it behind a large tool surface.
 
+## First Asset Path
+
+`docs/asset-library.js` manages local image imports for Studio. The scene editor selects an image from that library and writes the source directly into a sprite component. The web runtime then draws these sprite components. This establishes an explicit import-to-scene-to-runtime path while keeping project exports portable. Native builds can replace the inlined source with imported texture files and an asset database later without changing the scene's sprite boundary.
+
 ## Web Studio Boundary
 
 `docs/` contains Interverse Studio, an installable Progressive Web App that introduces the product from any browser. It owns project setup, templates, learning material, and future web previews.

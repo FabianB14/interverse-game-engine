@@ -13,6 +13,8 @@ const propertyInputs = {
   width: document.querySelector("#property-width"),
   height: document.querySelector("#property-height")
 };
+const spriteAssetSelect = document.querySelector("#sprite-asset");
+const spriteImages = new Map();
 
 function readProjects() { try { return JSON.parse(localStorage.getItem(projectStorageKey)) || []; } catch { return []; } }
 function saveProjects(projects) { localStorage.setItem(projectStorageKey, JSON.stringify(projects)); }
@@ -26,6 +28,7 @@ const defaultScene = {
   player: { x: 96, y: 160, width: 30, height: 30, speed: 240 },
   goal: { x: 800, y: 448, width: 96, height: 96 },
   collectibles: [{ x: 208, y: 205, width: 22, height: 22 }, { x: 590, y: 270, width: 22, height: 22 }],
+  sprites: [],
   solids: [{ x: 0, y: 0, width: 960, height: 56 }, { x: 0, y: 584, width: 960, height: 56 }, { x: 0, y: 0, width: 56, height: 640 }, { x: 904, y: 0, width: 56, height: 640 }, { x: 320, y: 104, width: 64, height: 288 }, { x: 544, y: 320, width: 256, height: 64 }]
 };
 
@@ -63,6 +66,18 @@ function selectedObject() { if (!selected) return null; if (selected.type === "p
 
 function drawRoundedRect(x, y, width, height, radius, color) { context.beginPath(); context.roundRect(x, y, width, height, radius); context.fillStyle = color; context.fill(); }
 function drawDiamond(item) { context.save(); context.translate(item.x + item.width / 2, item.y + item.height / 2); context.rotate(Math.PI / 4); context.fillStyle = scene.palette.beacon; context.fillRect(-item.width / 2, -item.height / 2, item.width, item.height); context.restore(); }
+function drawSprite(sprite) {
+  if (!sprite.source) return;
+  let image = spriteImages.get(sprite.source);
+  if (!image) {
+    image = new Image();
+    image.addEventListener("load", draw);
+    image.src = sprite.source;
+    spriteImages.set(sprite.source, image);
+  }
+  if (image.complete && image.naturalWidth > 0) context.drawImage(image, sprite.x, sprite.y, sprite.width, sprite.height);
+  else { context.fillStyle = "#b5c7d9"; context.fillRect(sprite.x, sprite.y, sprite.width, sprite.height); }
+}
 function drawSelection(object) { if (!object) return; context.strokeStyle = "#0e68d8"; context.lineWidth = 3; context.setLineDash([6, 4]); context.strokeRect(object.x - 4, object.y - 4, object.width + 8, object.height + 8); context.setLineDash([]); }
 
 function draw() {
@@ -72,6 +87,7 @@ function draw() {
   context.strokeStyle = scene.palette.grid;
   for (let x = 0; x <= canvas.width; x += gridSize) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, canvas.height); context.stroke(); }
   for (let y = 0; y <= canvas.height; y += gridSize) { context.beginPath(); context.moveTo(0, y); context.lineTo(canvas.width, y); context.stroke(); }
+  (scene.sprites || []).forEach(drawSprite);
   scene.solids.forEach((solid) => { drawRoundedRect(solid.x, solid.y, solid.width, solid.height, 7, scene.palette.wall); context.fillStyle = scene.palette.wallHighlight; context.fillRect(solid.x + 5, solid.y + 5, Math.max(0, solid.width - 10), 4); });
   scene.collectibles.forEach(drawDiamond);
   drawRoundedRect(scene.goal.x, scene.goal.y, scene.goal.width, scene.goal.height, 10, scene.palette.goal);
@@ -94,6 +110,7 @@ function selectAt(point) {
   const candidates = [
     { type: "player", object: scene.player },
     { type: "goal", object: scene.goal },
+    ...(scene.sprites || []).map((object, index) => ({ type: "sprite", index, object })),
     ...scene.collectibles.map((object, index) => ({ type: "collectible", index, object })),
     ...scene.solids.map((object, index) => ({ type: "solid", index, object }))
   ];
@@ -107,13 +124,37 @@ function addObject(point) {
   if (tool === "wall") { scene.solids.push({ x, y, width: 64, height: 64 }); selected = { type: "solid", index: scene.solids.length - 1 }; }
   if (tool === "beacon") { scene.collectibles.push({ x: x + 5, y: y + 5, width: 22, height: 22 }); selected = { type: "collectible", index: scene.collectibles.length - 1 }; }
   if (tool === "goal") { scene.goal = { ...scene.goal, x, y }; selected = { type: "goal" }; }
+  if (tool === "sprite") {
+    const asset = window.InterverseAssets.list().find((item) => item.id === spriteAssetSelect.value);
+    if (!asset) { document.querySelector("#save-status").textContent = "Choose a sprite image first"; return; }
+    scene.sprites ||= [];
+    scene.sprites.push({ x, y, width: 64, height: 64, assetId: asset.id, source: asset.source });
+    selected = { type: "sprite", index: scene.sprites.length - 1 };
+  }
+}
+
+function refreshSpriteAssets() {
+  const currentValue = spriteAssetSelect.value;
+  spriteAssetSelect.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Choose an image";
+  spriteAssetSelect.append(placeholder);
+  window.InterverseAssets.list().forEach((asset) => {
+    const option = document.createElement("option");
+    option.value = asset.id;
+    option.textContent = asset.name;
+    spriteAssetSelect.append(option);
+  });
+  spriteAssetSelect.value = currentValue;
 }
 
 canvas.addEventListener("click", (event) => {
   const bounds = canvas.getBoundingClientRect();
   const point = { x: (event.clientX - bounds.left) * canvas.width / bounds.width, y: (event.clientY - bounds.top) * canvas.height / bounds.height };
-  if (tool === "select") selectAt(point); else addObject(point);
-  saveScene(); refreshInspector(); draw();
+  if (tool === "select") selectAt(point);
+  else if (addObject(point) !== false) saveScene();
+  refreshInspector(); draw();
 });
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => {
@@ -158,5 +199,6 @@ document.querySelector("#scene-import").addEventListener("change", async (event)
 });
 
 document.querySelector("#project-name").textContent = project.name;
+refreshSpriteAssets();
 refreshInspector();
 draw();
