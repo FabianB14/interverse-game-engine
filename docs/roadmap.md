@@ -9,6 +9,7 @@ Scope:
 - Project manager
 - Empty project template
 - Scene file format
+- Browser-reference runtime with a playable example scene. Completed.
 - Asset browser
 - Sprite rendering
 - Basic transform tools
@@ -69,4 +70,3 @@ Scope:
 - Plugin system
 - Testing and release automation
 - Performance budgets
-
