@@ -102,7 +102,7 @@ function drawWorld(context, scene, camera) {
   }
 }
 
-function drawScene(context, scene, state) {
+function drawScene(context, scene, state, paused) {
   const camera = createCamera(context.canvas, state.player, scene.world);
   drawWorld(context, scene, camera);
   context.save();
@@ -146,48 +146,105 @@ function drawScene(context, scene, state) {
   context.fillStyle = "#b8c9dd";
   context.font = "13px system-ui, sans-serif";
   context.fillText(state.complete ? "Signal restored" : "Reach the signal gate", 29, 60);
+
+  if (paused) {
+    context.fillStyle = "#101827b8";
+    context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    context.fillStyle = "#f7fbff";
+    context.font = "700 30px system-ui, sans-serif";
+    context.textAlign = "center";
+    context.fillText("Paused", context.canvas.width / 2, context.canvas.height / 2);
+    context.textAlign = "start";
+  }
 }
 
-export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: suppliedScene, touchControls, onStateChange = () => {} }) {
+function newState(scene, savedState) {
+  const collectibles = Array.isArray(savedState?.collectibles) ? savedState.collectibles.map((item) => ({ ...item })) : scene.collectibles.map((item) => ({ ...item }));
+  return {
+    player: { ...scene.player, ...(savedState?.player || {}) },
+    collectibles,
+    collected: Number.isFinite(savedState?.collected) ? savedState.collected : scene.collectibles.length - collectibles.length,
+    complete: Boolean(savedState?.complete)
+  };
+}
+
+export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: suppliedScene, touchControls, savedState, onStateChange = () => {}, onEvent = () => {} }) {
   if (!projectUrl && !sceneUrl && !suppliedScene) throw new Error("A project, scene URL, or scene object is required.");
   const scene = suppliedScene || (projectUrl
     ? (await loadProject(projectUrl)).scene
     : await loadJson(sceneUrl, "scene"));
   const context = canvas.getContext("2d");
   const input = new Input(window, touchControls);
-  const state = {
-    player: { ...scene.player },
-    collectibles: scene.collectibles.map((item) => ({ ...item })),
-    collected: 0,
-    complete: false
-  };
+  const state = newState(scene, savedState);
+  let paused = false;
+  let animationFrame;
   let lastTime = performance.now();
 
-  function frame(now) {
-    const delta = Math.min((now - lastTime) / 1000, 0.05);
-    lastTime = now;
-    const direction = input.direction();
-    const magnitude = Math.hypot(direction.x, direction.y) || 1;
-    const speed = scene.player.speed * delta / magnitude;
-    resolveAxis(state.player, scene.solids, "x", direction.x * speed);
-    resolveAxis(state.player, scene.solids, "y", direction.y * speed);
-
-    state.collectibles = state.collectibles.filter((item) => {
-      if (!intersects(state.player, item)) return true;
-      state.collected += 1;
-      onStateChange({ ...state });
-      return false;
-    });
-
-    if (!state.complete && state.collectibles.length === 0 && intersects(state.player, scene.goal)) {
-      state.complete = true;
-      onStateChange({ ...state });
-    }
-
-    drawScene(context, scene, state);
-    requestAnimationFrame(frame);
+  function snapshot() {
+    return { player: { ...state.player }, collectibles: state.collectibles.map((item) => ({ ...item })), collected: state.collected, complete: state.complete };
   }
 
-  onStateChange({ ...state });
-  requestAnimationFrame(frame);
+  function notify() { onStateChange({ ...snapshot(), paused }); }
+
+  function emit(type) { onEvent({ type, state: snapshot() }); }
+
+  function restart() {
+    const reset = newState(scene);
+    state.player = reset.player;
+    state.collectibles = reset.collectibles;
+    state.collected = reset.collected;
+    state.complete = reset.complete;
+    paused = false;
+    lastTime = performance.now();
+    emit("restart");
+    notify();
+  }
+
+  function pause() {
+    if (paused) return;
+    paused = true;
+    emit("pause");
+    notify();
+  }
+
+  function resume() {
+    if (!paused) return;
+    paused = false;
+    lastTime = performance.now();
+    emit("resume");
+    notify();
+  }
+
+  function frame(now) {
+    if (!paused) {
+      const delta = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      const direction = input.direction();
+      const magnitude = Math.hypot(direction.x, direction.y) || 1;
+      const speed = scene.player.speed * delta / magnitude;
+      resolveAxis(state.player, scene.solids, "x", direction.x * speed);
+      resolveAxis(state.player, scene.solids, "y", direction.y * speed);
+
+      state.collectibles = state.collectibles.filter((item) => {
+        if (!intersects(state.player, item)) return true;
+        state.collected += 1;
+        emit("pickup");
+        notify();
+        return false;
+      });
+
+      if (!state.complete && state.collectibles.length === 0 && intersects(state.player, scene.goal)) {
+        state.complete = true;
+        emit("complete");
+        notify();
+      }
+    }
+
+    drawScene(context, scene, state, paused);
+    animationFrame = requestAnimationFrame(frame);
+  }
+
+  notify();
+  animationFrame = requestAnimationFrame(frame);
+  return { getState: snapshot, isPaused: () => paused, pause, restart, resume, dispose: () => cancelAnimationFrame(animationFrame) };
 }

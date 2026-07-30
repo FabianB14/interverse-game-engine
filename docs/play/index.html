@@ -18,16 +18,17 @@
       .brand { align-items: center; color: #eff5fb; display: flex; font-size: 18px; font-weight: 750; gap: 10px; text-decoration: none; }
       .brand img { border-radius: 8px; }
       #game-status { color: #a9c5dd; font-size: 14px; margin: 0; }
+      .play-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }.play-actions a, .play-actions button { background: #1e3856; border: 1px solid #496887; border-radius: 6px; color: #eff5fb; cursor: pointer; font: inherit; font-size: 13px; font-weight: 750; padding: 8px 10px; text-decoration: none; }.play-actions a:hover, .play-actions button:hover { background: #2a4c70; }.play-actions #restart-game { background: #0e68d8; border-color: #0e68d8; }
       canvas { background: #e8f1f8; border: 1px solid #41556c; display: block; height: auto; max-width: 100%; width: 960px; }
       .touch-controls { display: none; }
       .caption { color: #91a8c1; font-size: 13px; margin: 13px 0 0; }
-      @media (max-width: 600px) { body { padding: 14px; } header { align-items: flex-start; flex-direction: column; gap: 8px; } }
+      @media (max-width: 600px) { body { padding: 14px; } header { align-items: flex-start; flex-direction: column; gap: 8px; }.play-actions { justify-content: flex-start; } }
       @media (max-width: 700px), (pointer: coarse) { .touch-controls { display: grid; gap: 6px; grid-template-columns: repeat(3, 54px); justify-content: center; margin: 18px auto 0; touch-action: none; }.touch-controls button { align-items: center; background: #1e3856; border: 1px solid #496887; border-radius: 7px; color: #eff5fb; display: flex; font-size: 21px; height: 54px; justify-content: center; padding: 0; }.touch-controls button:active { background: #0e68d8; }.touch-controls button[data-direction="up"] { grid-column: 2; }.touch-controls button[data-direction="left"] { grid-column: 1; grid-row: 2; }.touch-controls button[data-direction="down"] { grid-column: 2; grid-row: 2; }.touch-controls button[data-direction="right"] { grid-column: 3; grid-row: 2; } }
     </style>
   </head>
   <body>
     <main>
-      <header><a class="brand" href="../"><img src="../assets/interverse-mark.svg" alt="" width="32" height="32" />Interverse Engine</a><p id="game-status" aria-live="polite"></p></header>
+      <header><a class="brand" href="../"><img src="../assets/interverse-mark.svg" alt="" width="32" height="32" />Interverse Engine</a><div class="play-actions"><p id="game-status" aria-live="polite"></p><button id="pause-game" type="button">Pause</button><button id="restart-game" type="button">Restart</button><a id="exit-preview" href="../">Exit</a></div></header>
       <canvas width="960" height="640" aria-label="Signal Garden game"></canvas>
       <div id="touch-controls" class="touch-controls" aria-label="Movement controls"><button type="button" data-direction="up" aria-label="Move up">&uarr;</button><button type="button" data-direction="left" aria-label="Move left">&larr;</button><button type="button" data-direction="down" aria-label="Move down">&darr;</button><button type="button" data-direction="right" aria-label="Move right">&rarr;</button></div>
       <p class="caption">Signal Garden is the first playable reference scene running in the Interverse web runtime.</p>

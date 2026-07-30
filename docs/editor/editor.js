@@ -1,6 +1,7 @@
 const projectStorageKey = "interverse-studio-projects";
 const sceneStoragePrefix = "interverse-editor-scene-v0:";
 const previewKey = "interverse-preview-scene";
+const previewContextKey = "interverse-preview-context";
 const gridSize = 32;
 const projectId = new URLSearchParams(window.location.search).get("project");
 const canvas = document.querySelector("#scene-canvas");
@@ -186,6 +187,7 @@ document.querySelector("#reset-scene").addEventListener("click", () => {
 
 document.querySelector("#preview-scene").addEventListener("click", () => {
   sessionStorage.setItem(previewKey, JSON.stringify(scene));
+  sessionStorage.setItem(previewContextKey, JSON.stringify({ projectId, returnUrl: window.location.href }));
   window.location.assign("../play/");
 });
 
