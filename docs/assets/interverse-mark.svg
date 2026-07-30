@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Interverse mark</title>
+  <rect width="512" height="512" rx="112" fill="#101827"/>
+  <path d="M256 84 414 175v162L256 428 98 337V175L256 84Z" fill="#2b79e8"/>
+  <path d="m256 84 158 91-158 92-158-92 158-91Z" fill="#70e2b0"/>
+  <path d="m98 175 158 92v161L98 337V175Z" fill="#174f9d"/>
+  <path d="m414 175-158 92v161l158-91V175Z" fill="#2064bd"/>
+  <path d="m256 133 74 42-74 43-74-43 74-42Z" fill="#f8f9fb"/>
+</svg>

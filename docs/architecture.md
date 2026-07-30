@@ -32,7 +32,7 @@ Editor
 Platform
   Windows
   Android
-  Web Preview
+  Web Studio and Preview
   Future: macOS, Linux, iOS
 ```
 
@@ -52,6 +52,12 @@ The implementation stack can still be decided. Good candidates include:
 
 The repository should avoid committing to advanced 3D rendering, multiplayer, or marketplace systems until the 2D game workflow is complete.
 
+## Web Studio Boundary
+
+`docs/` contains Interverse Studio, an installable Progressive Web App that introduces the product from any browser. It owns project setup, templates, learning material, and future web previews.
+
+The native engine remains responsible for performance-sensitive editing, local asset import, desktop game builds, and platform packaging. This is especially important for iOS: browser installation is supported, but a full native editor does not belong inside a mobile Safari tab.
+
 ## Plugin Boundary
 
 Optional integrations should be plugins rather than core systems:
@@ -65,4 +71,3 @@ Optional integrations should be plugins rather than core systems:
 - Online services
 
 This keeps the base engine easier to learn and easier to maintain.
-
