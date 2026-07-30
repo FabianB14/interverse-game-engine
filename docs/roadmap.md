@@ -27,10 +27,10 @@ Scope:
 
 - Collision
 - Simple 2D physics
-- Audio
+- Browser playtest audio feedback. Completed.
 - UI editor
 - Animation
-- Save and load
+- Browser playtest save and load. Completed.
 - Windows export
 - Android export
 - Sample complete game
