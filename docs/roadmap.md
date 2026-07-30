@@ -9,6 +9,7 @@ Scope:
 - Project manager
 - Empty project template
 - Project manifest and scene file format. Project manifest completed.
+- Portable project export and import. Completed.
 - Browser scene editor with runtime preview. Completed.
 - Browser-reference runtime with a playable example scene. Completed.
 - Asset browser

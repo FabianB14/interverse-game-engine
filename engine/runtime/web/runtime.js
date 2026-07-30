@@ -50,7 +50,8 @@ async function loadJson(url, description) {
 export async function loadProject(projectUrl) {
   const manifestUrl = new URL(projectUrl, window.location.href);
   const project = await loadJson(manifestUrl, "project manifest");
-  if (project.format !== "interverse.project/v0") throw new Error("Unsupported Interverse project format.");
+  if (project.format !== "interverse.project/v0" && project.format !== "interverse.project/v1") throw new Error("Unsupported Interverse project format.");
+  if (project.scene && typeof project.scene === "object") return { project, scene: project.scene };
   if (typeof project.entryScene !== "string" || project.entryScene.length === 0) throw new Error("Project manifest is missing an entry scene.");
 
   const scene = await loadJson(new URL(project.entryScene, manifestUrl), "entry scene");

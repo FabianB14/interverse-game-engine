@@ -5,6 +5,7 @@ const templates = [
 ];
 
 const storageKey = "interverse-studio-projects";
+const sceneStoragePrefix = "interverse-editor-scene-v0:";
 const projectGrid = document.querySelector("#project-grid");
 const projectCount = document.querySelector("#project-count");
 const emptyState = document.querySelector("#empty-state");
@@ -26,24 +27,17 @@ function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
-function templateIdFor(project) {
-  return project.templateId || templates.find((template) => template.name === project.template)?.id || "platformer";
-}
+function openProject(project) { window.location.assign(`editor/?project=${encodeURIComponent(project.id)}`); }
 
-function downloadProject(project) {
-  const manifest = {
-    format: "interverse.project/v0",
-    name: project.name,
-    template: templateIdFor(project),
-    entryScene: "scenes/main.scene.json"
-  };
-  const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" });
-  const downloadUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "interverse-project"}.interverse.json`;
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+function importProject(packageData) {
+  if (packageData.format !== "interverse.project/v1" || !packageData.scene || typeof packageData.name !== "string") {
+    throw new Error("Choose an Interverse project export with its scene included.");
+  }
+  const template = templates.find((item) => item.id === packageData.template) || templates[0];
+  const project = { id: crypto.randomUUID(), name: packageData.name.trim() || "Imported project", template: template.name, templateId: template.id, createdAt: Date.now() };
+  localStorage.setItem(`${sceneStoragePrefix}${project.id}`, JSON.stringify(packageData.scene));
+  saveProjects([project, ...readProjects()]);
+  return project;
 }
 
 function renderProjects(query = "") {
@@ -56,7 +50,7 @@ function renderProjects(query = "") {
     card.querySelector(".project-template").textContent = project.template;
     card.querySelector("h2").textContent = project.name;
     card.querySelector(".project-date").textContent = `Created ${formatDate(project.createdAt)}`;
-    card.querySelector(".export-project").addEventListener("click", () => downloadProject(project));
+    card.querySelector(".open-project").addEventListener("click", () => openProject(project));
     card.querySelector(".delete-project").addEventListener("click", () => {
       saveProjects(readProjects().filter((item) => item.id !== project.id));
       renderProjects(document.querySelector("#project-search").value);
@@ -139,8 +133,20 @@ projectForm.addEventListener("submit", (event) => {
   const project = { id: crypto.randomUUID(), name: formData.get("project-name").trim(), template: template.name, templateId: template.id, createdAt: Date.now() };
   saveProjects([project, ...readProjects()]);
   projectDialog.close();
-  showView("projects");
-  renderProjects();
+  openProject(project);
+});
+
+document.querySelector("#import-project-button").addEventListener("click", () => document.querySelector("#project-import").click());
+document.querySelector("#project-import").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  event.target.value = "";
+  if (!file) return;
+  try {
+    const project = importProject(JSON.parse(await file.text()));
+    openProject(project);
+  } catch (error) {
+    window.alert(error.message);
+  }
 });
 
 renderTemplates();
