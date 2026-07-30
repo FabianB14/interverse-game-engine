@@ -56,4 +56,4 @@ docs/
 
 This repository now includes an installable browser-based Interverse Studio in `docs/`. It provides a simple project workspace that can be published on GitHub Pages and installed on supported Windows browsers and iOS Safari.
 
-The next engine implementation step is a runnable 2D runtime that can load and display the first scene created by Studio.
+It also includes the first runnable 2D web reference runtime at `engine/runtime/web/` and a playable scene at `examples/first-game/`. The example validates the engine loop, scene loading, keyboard input, drawing, collision, collectible triggers, and goal completion.
