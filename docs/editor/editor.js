@@ -41,6 +41,7 @@ const defaultScene = {
 let scene = loadScene();
 let tool = "select";
 let selected = null;
+let drag;
 const history = [];
 let historyIndex = -1;
 
@@ -96,7 +97,8 @@ function importProject(packageData) {
   localStorage.setItem(`${sceneStoragePrefix}${newProject.id}`, JSON.stringify(packageData.scene));
   window.location.assign(`?project=${encodeURIComponent(newProject.id)}`);
 }
-function snap(value) { return Math.max(0, Math.min(Math.round(value / gridSize) * gridSize, 928)); }
+function snap(value, maximum) { return Math.max(0, Math.min(Math.round(value / gridSize) * gridSize, Math.max(0, maximum))); }
+function boundedPosition(value, size, dimension) { return snap(value, scene.world[dimension] - size); }
 function rectangleContains(rectangle, point) { return point.x >= rectangle.x && point.x <= rectangle.x + rectangle.width && point.y >= rectangle.y && point.y <= rectangle.y + rectangle.height; }
 function selectedObject() { if (!selected) return null; if (selected.type === "player") return scene.player; if (selected.type === "goal") return scene.goal; return scene[`${selected.type}s`][selected.index]; }
 
@@ -192,16 +194,14 @@ function selectAt(point) {
 }
 
 function addObject(point) {
-  const x = snap(point.x);
-  const y = snap(point.y);
-  if (tool === "wall") { scene.solids.push({ x, y, width: 64, height: 64 }); selected = { type: "solid", index: scene.solids.length - 1 }; }
-  if (tool === "beacon") { scene.collectibles.push({ x: x + 5, y: y + 5, width: 22, height: 22 }); selected = { type: "collectible", index: scene.collectibles.length - 1 }; }
-  if (tool === "goal") { scene.goal = { ...scene.goal, x, y }; selected = { type: "goal" }; }
+  if (tool === "wall") { scene.solids.push({ x: boundedPosition(point.x, 64, "width"), y: boundedPosition(point.y, 64, "height"), width: 64, height: 64 }); selected = { type: "solid", index: scene.solids.length - 1 }; }
+  if (tool === "beacon") { scene.collectibles.push({ x: boundedPosition(point.x, 22, "width"), y: boundedPosition(point.y, 22, "height"), width: 22, height: 22 }); selected = { type: "collectible", index: scene.collectibles.length - 1 }; }
+  if (tool === "goal") { scene.goal = { ...scene.goal, x: boundedPosition(point.x, scene.goal.width, "width"), y: boundedPosition(point.y, scene.goal.height, "height") }; selected = { type: "goal" }; }
   if (tool === "sprite") {
     const asset = window.InterverseAssets.list().find((item) => item.id === spriteAssetSelect.value);
     if (!asset) { document.querySelector("#save-status").textContent = "Choose a sprite image first"; return; }
     scene.sprites ||= [];
-    scene.sprites.push({ x, y, width: 64, height: 64, assetId: asset.id, source: asset.source });
+    scene.sprites.push({ x: boundedPosition(point.x, 64, "width"), y: boundedPosition(point.y, 64, "height"), width: 64, height: 64, assetId: asset.id, source: asset.source });
     selected = { type: "sprite", index: scene.sprites.length - 1 };
   }
 }
@@ -222,11 +222,51 @@ function refreshSpriteAssets() {
   spriteAssetSelect.value = currentValue;
 }
 
-canvas.addEventListener("click", (event) => {
+function canvasPoint(event) {
   const bounds = canvas.getBoundingClientRect();
-  const point = { x: (event.clientX - bounds.left) * canvas.width / bounds.width, y: (event.clientY - bounds.top) * canvas.height / bounds.height };
-  if (tool === "select") { selectAt(point); refreshEditor(); }
+  return { x: (event.clientX - bounds.left) * canvas.width / bounds.width, y: (event.clientY - bounds.top) * canvas.height / bounds.height };
+}
+
+canvas.addEventListener("pointerdown", (event) => {
+  const point = canvasPoint(event);
+  if (tool === "select") {
+    selectAt(point);
+    const object = selectedObject();
+    if (object) {
+      drag = { pointerId: event.pointerId, object, startX: object.x, startY: object.y, point, moved: false };
+      canvas.setPointerCapture(event.pointerId);
+    }
+    refreshEditor();
+  }
   else if (addObject(point) !== false) applySceneChange();
+});
+
+canvas.addEventListener("pointermove", (event) => {
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  const point = canvasPoint(event);
+  const x = boundedPosition(drag.startX + point.x - drag.point.x, drag.object.width, "width");
+  const y = boundedPosition(drag.startY + point.y - drag.point.y, drag.object.height, "height");
+  drag.moved ||= x !== drag.object.x || y !== drag.object.y;
+  drag.object.x = x;
+  drag.object.y = y;
+  refreshInspector();
+  draw();
+});
+
+canvas.addEventListener("pointerup", (event) => {
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+  const moved = drag.moved;
+  drag = undefined;
+  if (moved) applySceneChange("Moved object");
+});
+
+canvas.addEventListener("pointercancel", (event) => {
+  if (!drag || drag.pointerId !== event.pointerId) return;
+  drag.object.x = drag.startX;
+  drag.object.y = drag.startY;
+  drag = undefined;
+  refreshEditor();
 });
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => {
@@ -262,7 +302,7 @@ function deleteSelected() {
 function duplicateSelected() {
   const object = selectedObject();
   if (!object || selected.type === "player" || selected.type === "goal") return;
-  const duplicate = { ...clone(object), x: snap(object.x + gridSize), y: snap(object.y + gridSize), name: `${objectLabel(selected.type, selected.index, object)} Copy` };
+  const duplicate = { ...clone(object), x: boundedPosition(object.x + gridSize, object.width, "width"), y: boundedPosition(object.y + gridSize, object.height, "height"), name: `${objectLabel(selected.type, selected.index, object)} Copy` };
   const objects = scene[`${selected.type}s`];
   objects.push(duplicate);
   selected = { type: selected.type, index: objects.length - 1 };
