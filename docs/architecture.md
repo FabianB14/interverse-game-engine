@@ -52,6 +52,20 @@ The implementation stack can still be decided. Good candidates include:
 
 The repository should avoid committing to advanced 3D rendering, multiplayer, or marketplace systems until the 2D game workflow is complete.
 
+## Web Reference Runtime
+
+The first implementation is a browser-native runtime in `engine/runtime/web/`. It is not a replacement for the future native engine; it is a fast feedback environment for proving scene structure and gameplay behavior.
+
+Its initial contract is intentionally narrow:
+
+- A scene is data loaded from JSON.
+- A project manifest owns the project identity and entry-scene reference.
+- The runtime updates game state from input each frame.
+- The renderer draws the current state without owning gameplay rules.
+- Collision and triggers are shared runtime behavior rather than scene-specific code.
+
+`examples/first-game/` is the integration test for that contract. It should remain small enough to run and understand without a full editor.
+
 ## Web Studio Boundary
 
 `docs/` contains Interverse Studio, an installable Progressive Web App that introduces the product from any browser. It owns project setup, templates, learning material, and future web previews.

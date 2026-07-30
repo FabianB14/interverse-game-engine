@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interverse First Game</title>
+    <style>
+      :root { background: #0d1624; color: #eff5fb; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { align-items: center; display: grid; margin: 0; min-height: 100vh; padding: 24px; place-items: center; }
+      main { max-width: 1000px; width: 100%; }
+      header { align-items: baseline; display: flex; gap: 16px; justify-content: space-between; margin-bottom: 13px; }
+      h1 { font-size: 18px; letter-spacing: 0; margin: 0; }
+      #game-status { color: #a9c5dd; font-size: 14px; margin: 0; }
+      canvas { background: #e8f1f8; border: 1px solid #41556c; display: block; height: auto; max-width: 100%; width: 960px; }
+      .caption { color: #91a8c1; font-size: 13px; margin: 13px 0 0; }
+      @media (max-width: 600px) { body { padding: 14px; } header { align-items: flex-start; flex-direction: column; gap: 5px; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header><h1>Signal Garden</h1><p id="game-status" aria-live="polite"></p></header>
+      <canvas width="960" height="640" aria-label="Signal Garden game"></canvas>
+      <p class="caption">A reference scene for the Interverse web runtime.</p>
+    </main>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
