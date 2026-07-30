@@ -8,7 +8,7 @@ Scope:
 
 - Project manager
 - Empty project template
-- Scene file format
+- Project manifest and scene file format. Project manifest completed.
 - Browser-reference runtime with a playable example scene. Completed.
 - Asset browser
 - Sprite rendering

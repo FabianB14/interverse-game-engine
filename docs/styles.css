@@ -44,6 +44,9 @@ h2 { letter-spacing: 0; }
 .project-template { color: #4677ad; font-size: 12px; font-weight: 800; letter-spacing: .06em; margin-bottom: 6px; text-transform: uppercase; }
 .project-card h2 { font-size: 17px; margin-bottom: 18px; overflow-wrap: anywhere; }
 .project-meta { align-items: center; color: #72849a; display: flex; font-size: 12px; justify-content: space-between; }
+.project-actions { display: flex; gap: 12px; }
+.export-project { background: transparent; border: 0; color: #0e68d8; font-size: 12px; padding: 0; }
+.export-project:hover { text-decoration: underline; }
 .delete-project { background: transparent; border: 0; color: #64768c; font-size: 12px; padding: 0; }
 .delete-project:hover { color: #bf283c; text-decoration: underline; }
 .empty-state { align-items: center; border: 1px dashed #b7c8db; border-radius: 8px; display: flex; flex-direction: column; margin-top: 12px; padding: 62px 22px; text-align: center; }

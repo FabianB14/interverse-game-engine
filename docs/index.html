@@ -32,7 +32,7 @@
       </main>
     </div>
     <dialog id="project-dialog" aria-labelledby="dialog-title"><form id="project-form" method="dialog"><div class="dialog-header"><div><p class="eyebrow">New project</p><h2 id="dialog-title">Choose a starting point</h2></div><button class="icon-button" type="button" id="close-dialog" aria-label="Close">&#215;</button></div><label class="form-label" for="project-name">Project name</label><input id="project-name" name="project-name" maxlength="48" placeholder="My first game" required /><fieldset><legend>Template</legend><div id="template-options" class="template-options"></div></fieldset><div class="dialog-actions"><button class="text-button" type="button" id="cancel-dialog">Cancel</button><button class="primary-button" type="submit">Create project</button></div></form></dialog>
-    <template id="project-card-template"><article class="project-card"><div class="project-art"><span></span></div><div class="project-card-content"><p class="project-template"></p><h2></h2><div class="project-meta"><span class="project-date"></span><button class="delete-project" type="button">Remove</button></div></div></article></template>
+    <template id="project-card-template"><article class="project-card"><div class="project-art"><span></span></div><div class="project-card-content"><p class="project-template"></p><h2></h2><div class="project-meta"><span class="project-date"></span><div class="project-actions"><button class="export-project" type="button">Export</button><button class="delete-project" type="button">Remove</button></div></div></div></article></template>
     <script src="app.js"></script>
   </body>
 </html>

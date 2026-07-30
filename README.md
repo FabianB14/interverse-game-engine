@@ -38,6 +38,7 @@ tools/
   asset-pipeline/ Import, convert, and cache game assets.
 docs/
   index.html       Installable Interverse Studio web companion.
+  project-format.md Project manifest reference.
   web-studio.md    Browser, iOS, and Windows installation notes.
   roadmap.md
   architecture.md
@@ -56,4 +57,4 @@ docs/
 
 This repository now includes an installable browser-based Interverse Studio in `docs/`. It provides a simple project workspace that can be published on GitHub Pages and installed on supported Windows browsers and iOS Safari.
 
-It also includes the first runnable 2D web reference runtime at `engine/runtime/web/` and a playable scene at `examples/first-game/`. The example validates the engine loop, scene loading, keyboard input, drawing, collision, collectible triggers, and goal completion.
+It also includes the first runnable 2D web reference runtime at `engine/runtime/web/` and a playable scene at `examples/first-game/`. The example validates the project manifest, engine loop, scene loading, keyboard input, drawing, collision, collectible triggers, and goal completion.
