@@ -2,10 +2,20 @@ import { bootTopDownGame } from "./runtime.js";
 
 const canvas = document.querySelector("canvas");
 const status = document.querySelector("#game-status");
+let previewScene;
+
+try {
+  previewScene = JSON.parse(sessionStorage.getItem("interverse-preview-scene"));
+} catch {
+  previewScene = undefined;
+}
+
+sessionStorage.removeItem("interverse-preview-scene");
 
 bootTopDownGame({
   canvas,
-  projectUrl: "./project.interverse.json",
+  projectUrl: previewScene ? undefined : "./project.interverse.json",
+  scene: previewScene,
   onStateChange(state) {
     status.textContent = state.complete
       ? "Signal restored"

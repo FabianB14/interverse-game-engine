@@ -123,11 +123,11 @@ function drawScene(context, scene, state) {
   context.fillText(state.complete ? "Signal restored" : "Reach the signal gate", 29, 60);
 }
 
-export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, onStateChange = () => {} }) {
-  if (!projectUrl && !sceneUrl) throw new Error("A project or scene URL is required.");
-  const scene = projectUrl
+export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: suppliedScene, onStateChange = () => {} }) {
+  if (!projectUrl && !sceneUrl && !suppliedScene) throw new Error("A project, scene URL, or scene object is required.");
+  const scene = suppliedScene || (projectUrl
     ? (await loadProject(projectUrl)).scene
-    : await loadJson(sceneUrl, "scene");
+    : await loadJson(sceneUrl, "scene"));
   const context = canvas.getContext("2d");
   const input = new Input();
   const state = {
