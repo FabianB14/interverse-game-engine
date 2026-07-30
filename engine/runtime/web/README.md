@@ -6,6 +6,7 @@ It currently provides:
 
 - JSON scene loading.
 - Keyboard movement through a shared input layer.
+- Touch-direction input for browser and PWA previews.
 - A canvas renderer with a camera.
 - Sprite components backed by portable image sources.
 - Axis-aligned solid collision.
