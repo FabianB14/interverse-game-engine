@@ -9,7 +9,7 @@
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" href="../assets/interverse-mark.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="../assets/interverse-mark-180.png" />
-    <link rel="stylesheet" href="editor.css?v=20260730-3" />
+    <link rel="stylesheet" href="editor.css?v=20260730-4" />
   </head>
   <body>
     <header class="editor-header">
@@ -25,6 +25,8 @@
           <button class="tool-button" type="button" data-tool="wall">Wall</button>
           <button class="tool-button" type="button" data-tool="beacon">Beacon</button>
           <button class="tool-button" type="button" data-tool="goal">Goal</button>
+          <button class="tool-button" type="button" data-tool="hazard">Hazard</button>
+          <button class="tool-button" type="button" data-tool="checkpoint">Checkpoint</button>
           <button class="tool-button" type="button" data-tool="sprite">Sprite</button>
           <label class="asset-select" for="sprite-asset">Sprite image<select id="sprite-asset"><option value="">Choose an image</option></select></label>
           <button class="asset-import-button" id="add-sprite-asset" type="button">Upload image</button>
@@ -54,6 +56,6 @@
     <input id="scene-import" type="file" accept="application/json,.json,.interverse.json" hidden />
     <input id="sprite-image-import" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden />
     <script src="../asset-library.js?v=20260730-2"></script>
-    <script src="editor.js?v=20260730-3"></script>
+    <script src="editor.js?v=20260730-4"></script>
   </body>
 </html>

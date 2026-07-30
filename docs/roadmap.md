@@ -16,6 +16,7 @@ Scope:
 - Sprite rendering. Completed for the web runtime.
 - Basic transform tools. Completed.
 - Scene hierarchy, object naming, duplication, undo/redo, keyboard shortcuts, and validation. Completed.
+- Hazards, checkpoints, respawns, and playtest run stats. Completed.
 - Keyboard and mouse input
 - Run button
 - Example scene
@@ -26,7 +27,7 @@ User outcome: finish a small 2D game with menus, sound, saving, and export.
 
 Scope:
 
-- Collision
+- Collision. Completed for the browser-reference runtime.
 - Simple 2D physics
 - Browser playtest audio feedback. Completed.
 - UI editor

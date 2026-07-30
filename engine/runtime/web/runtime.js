@@ -63,6 +63,26 @@ function drawSprite(context, sprite) {
   if (image.complete && image.naturalWidth > 0) context.drawImage(image, sprite.x, sprite.y, sprite.width, sprite.height);
 }
 
+function drawHazard(context, hazard, color) {
+  context.fillStyle = color;
+  context.fillRect(hazard.x, hazard.y, hazard.width, hazard.height);
+  context.fillStyle = "#ffffff55";
+  for (let x = hazard.x - hazard.height; x < hazard.x + hazard.width; x += 18) {
+    context.beginPath();
+    context.moveTo(x, hazard.y + hazard.height);
+    context.lineTo(x + hazard.height, hazard.y);
+    context.lineTo(x + hazard.height * 2, hazard.y + hazard.height);
+    context.fill();
+  }
+}
+
+function drawCheckpoint(context, checkpoint, active, palette) {
+  drawRoundedRect(context, checkpoint.x, checkpoint.y, checkpoint.width, checkpoint.height, 6, active ? (palette.checkpointActive || "#255b87") : (palette.checkpoint || "#3d7fb5"));
+  context.fillStyle = "#ffffffaa";
+  context.fillRect(checkpoint.x + checkpoint.width / 2 - 2, checkpoint.y + 7, 4, checkpoint.height - 14);
+  context.fillRect(checkpoint.x + checkpoint.width / 2 + 2, checkpoint.y + 8, checkpoint.width / 2 - 8, 10);
+}
+
 async function loadJson(url, description) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Unable to load ${description}: ${response.status}`);
@@ -110,6 +130,10 @@ function drawScene(context, scene, state, paused) {
 
   for (const sprite of scene.sprites || []) drawSprite(context, sprite);
 
+  (scene.checkpoints || []).forEach((checkpoint, index) => drawCheckpoint(context, checkpoint, state.activeCheckpoint === index, scene.palette));
+
+  for (const hazard of scene.hazards || []) drawHazard(context, hazard, scene.palette.hazard || "#d64d4d");
+
   for (const solid of scene.solids) {
     drawRoundedRect(context, solid.x, solid.y, solid.width, solid.height, 8, scene.palette.wall);
     context.fillStyle = scene.palette.wallHighlight;
@@ -139,13 +163,14 @@ function drawScene(context, scene, state, paused) {
   context.restore();
 
   context.fillStyle = "#101827cc";
-  context.fillRect(16, 16, 198, 56);
+  context.fillRect(16, 16, 244, 76);
   context.fillStyle = "#f7fbff";
   context.font = "600 15px system-ui, sans-serif";
   context.fillText(`Beacons ${state.collected}/${scene.collectibles.length}`, 29, 40);
   context.fillStyle = "#b8c9dd";
   context.font = "13px system-ui, sans-serif";
-  context.fillText(state.complete ? "Signal restored" : "Reach the signal gate", 29, 60);
+  context.fillText(state.complete ? "Signal restored" : `Resets ${state.deaths} · ${Math.floor(state.elapsed)}s`, 29, 60);
+  context.fillText(state.complete ? "Run complete" : "Reach the signal gate", 29, 80);
 
   if (paused) {
     context.fillStyle = "#101827b8";
@@ -160,11 +185,16 @@ function drawScene(context, scene, state, paused) {
 
 function newState(scene, savedState) {
   const collectibles = Array.isArray(savedState?.collectibles) ? savedState.collectibles.map((item) => ({ ...item })) : scene.collectibles.map((item) => ({ ...item }));
+  const spawn = savedState?.spawn && Number.isFinite(savedState.spawn.x) && Number.isFinite(savedState.spawn.y) ? { ...scene.player, ...savedState.spawn } : { ...scene.player };
   return {
     player: { ...scene.player, ...(savedState?.player || {}) },
     collectibles,
     collected: Number.isFinite(savedState?.collected) ? savedState.collected : scene.collectibles.length - collectibles.length,
-    complete: Boolean(savedState?.complete)
+    complete: Boolean(savedState?.complete),
+    spawn,
+    activeCheckpoint: Number.isInteger(savedState?.activeCheckpoint) ? savedState.activeCheckpoint : -1,
+    deaths: Number.isFinite(savedState?.deaths) ? savedState.deaths : 0,
+    elapsed: Number.isFinite(savedState?.elapsed) ? savedState.elapsed : 0
   };
 }
 
@@ -179,9 +209,10 @@ export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: sup
   let paused = false;
   let animationFrame;
   let lastTime = performance.now();
+  let reportedSecond = Math.floor(state.elapsed);
 
   function snapshot() {
-    return { player: { ...state.player }, collectibles: state.collectibles.map((item) => ({ ...item })), collected: state.collected, complete: state.complete };
+    return { player: { ...state.player }, collectibles: state.collectibles.map((item) => ({ ...item })), collected: state.collected, complete: state.complete, spawn: { ...state.spawn }, activeCheckpoint: state.activeCheckpoint, deaths: state.deaths, elapsed: state.elapsed };
   }
 
   function notify() { onStateChange({ ...snapshot(), paused }); }
@@ -194,8 +225,13 @@ export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: sup
     state.collectibles = reset.collectibles;
     state.collected = reset.collected;
     state.complete = reset.complete;
+    state.spawn = reset.spawn;
+    state.activeCheckpoint = reset.activeCheckpoint;
+    state.deaths = reset.deaths;
+    state.elapsed = reset.elapsed;
     paused = false;
     lastTime = performance.now();
+    reportedSecond = 0;
     emit("restart");
     notify();
   }
@@ -219,25 +255,45 @@ export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: sup
     if (!paused) {
       const delta = Math.min((now - lastTime) / 1000, 0.05);
       lastTime = now;
+      state.elapsed += delta;
       const direction = input.direction();
       const magnitude = Math.hypot(direction.x, direction.y) || 1;
       const speed = scene.player.speed * delta / magnitude;
       resolveAxis(state.player, scene.solids, "x", direction.x * speed);
       resolveAxis(state.player, scene.solids, "y", direction.y * speed);
 
-      state.collectibles = state.collectibles.filter((item) => {
-        if (!intersects(state.player, item)) return true;
-        state.collected += 1;
-        emit("pickup");
-        notify();
-        return false;
-      });
-
-      if (!state.complete && state.collectibles.length === 0 && intersects(state.player, scene.goal)) {
-        state.complete = true;
-        emit("complete");
+      const checkpointIndex = (scene.checkpoints || []).findIndex((checkpoint) => intersects(state.player, checkpoint));
+      if (checkpointIndex >= 0 && checkpointIndex !== state.activeCheckpoint) {
+        const checkpoint = scene.checkpoints[checkpointIndex];
+        state.activeCheckpoint = checkpointIndex;
+        state.spawn = { ...scene.player, x: checkpoint.x + (checkpoint.width - scene.player.width) / 2, y: checkpoint.y + (checkpoint.height - scene.player.height) / 2 };
+        emit("checkpoint");
         notify();
       }
+
+      if ((scene.hazards || []).some((hazard) => intersects(state.player, hazard))) {
+        state.deaths += 1;
+        state.player = { ...state.spawn };
+        emit("respawn");
+        notify();
+      } else {
+        state.collectibles = state.collectibles.filter((item) => {
+          if (!intersects(state.player, item)) return true;
+          state.collected += 1;
+          emit("pickup");
+          notify();
+          return false;
+        });
+
+        if (!state.complete && state.collectibles.length === 0 && intersects(state.player, scene.goal)) {
+          state.complete = true;
+          emit("complete");
+          notify();
+        }
+      }
+
+      const elapsedSecond = Math.floor(state.elapsed);
+      if (elapsedSecond !== reportedSecond) { reportedSecond = elapsedSecond; notify(); }
     }
 
     drawScene(context, scene, state, paused);

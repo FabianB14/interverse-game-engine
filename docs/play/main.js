@@ -38,7 +38,7 @@ function readSavedState() {
 function updateStatus(state) {
   if (state.paused) status.textContent = "Paused";
   else if (state.complete) status.textContent = "Signal restored";
-  else status.textContent = `${state.collected} beacon${state.collected === 1 ? "" : "s"} recovered`;
+  else status.textContent = `${state.collected} beacon${state.collected === 1 ? "" : "s"} · ${state.deaths} resets · ${Math.floor(state.elapsed)}s`;
 }
 
 async function start() {
