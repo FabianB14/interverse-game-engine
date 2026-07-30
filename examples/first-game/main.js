@@ -5,7 +5,7 @@ const status = document.querySelector("#game-status");
 
 bootTopDownGame({
   canvas,
-  sceneUrl: "./scene.json",
+  projectUrl: "./project.interverse.json",
   onStateChange(state) {
     status.textContent = state.complete
       ? "Signal restored"

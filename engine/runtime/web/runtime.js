@@ -41,6 +41,22 @@ function drawRoundedRect(context, x, y, width, height, radius, color) {
   context.fill();
 }
 
+async function loadJson(url, description) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Unable to load ${description}: ${response.status}`);
+  return response.json();
+}
+
+export async function loadProject(projectUrl) {
+  const manifestUrl = new URL(projectUrl, window.location.href);
+  const project = await loadJson(manifestUrl, "project manifest");
+  if (project.format !== "interverse.project/v0") throw new Error("Unsupported Interverse project format.");
+  if (typeof project.entryScene !== "string" || project.entryScene.length === 0) throw new Error("Project manifest is missing an entry scene.");
+
+  const scene = await loadJson(new URL(project.entryScene, manifestUrl), "entry scene");
+  return { project, scene };
+}
+
 function drawWorld(context, scene, camera) {
   context.fillStyle = scene.palette.ground;
   context.fillRect(0, 0, context.canvas.width, context.canvas.height);
@@ -107,10 +123,11 @@ function drawScene(context, scene, state) {
   context.fillText(state.complete ? "Signal restored" : "Reach the signal gate", 29, 60);
 }
 
-export async function bootTopDownGame({ canvas, sceneUrl, onStateChange = () => {} }) {
-  const response = await fetch(sceneUrl);
-  if (!response.ok) throw new Error(`Unable to load scene: ${response.status}`);
-  const scene = await response.json();
+export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, onStateChange = () => {} }) {
+  if (!projectUrl && !sceneUrl) throw new Error("A project or scene URL is required.");
+  const scene = projectUrl
+    ? (await loadProject(projectUrl)).scene
+    : await loadJson(sceneUrl, "scene");
   const context = canvas.getContext("2d");
   const input = new Input();
   const state = {

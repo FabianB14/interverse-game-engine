@@ -26,6 +26,26 @@ function formatDate(value) {
   return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
+function templateIdFor(project) {
+  return project.templateId || templates.find((template) => template.name === project.template)?.id || "platformer";
+}
+
+function downloadProject(project) {
+  const manifest = {
+    format: "interverse.project/v0",
+    name: project.name,
+    template: templateIdFor(project),
+    entryScene: "scenes/main.scene.json"
+  };
+  const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" });
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "interverse-project"}.interverse.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+}
+
 function renderProjects(query = "") {
   const projects = readProjects().filter((project) => project.name.toLowerCase().includes(query.toLowerCase()));
   projectGrid.replaceChildren();
@@ -36,6 +56,7 @@ function renderProjects(query = "") {
     card.querySelector(".project-template").textContent = project.template;
     card.querySelector("h2").textContent = project.name;
     card.querySelector(".project-date").textContent = `Created ${formatDate(project.createdAt)}`;
+    card.querySelector(".export-project").addEventListener("click", () => downloadProject(project));
     card.querySelector(".delete-project").addEventListener("click", () => {
       saveProjects(readProjects().filter((item) => item.id !== project.id));
       renderProjects(document.querySelector("#project-search").value);
@@ -115,7 +136,7 @@ projectForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(projectForm);
   const template = templates.find((item) => item.id === formData.get("template"));
-  const project = { id: crypto.randomUUID(), name: formData.get("project-name").trim(), template: template.name, createdAt: Date.now() };
+  const project = { id: crypto.randomUUID(), name: formData.get("project-name").trim(), template: template.name, templateId: template.id, createdAt: Date.now() };
   saveProjects([project, ...readProjects()]);
   projectDialog.close();
   showView("projects");

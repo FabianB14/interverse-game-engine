@@ -59,6 +59,7 @@ The first implementation is a browser-native runtime in `engine/runtime/web/`. I
 Its initial contract is intentionally narrow:
 
 - A scene is data loaded from JSON.
+- A project manifest owns the project identity and entry-scene reference.
 - The runtime updates game state from input each frame.
 - The renderer draws the current state without owning gameplay rules.
 - Collision and triggers are shared runtime behavior rather than scene-specific code.
