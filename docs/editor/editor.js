@@ -158,9 +158,13 @@ canvas.addEventListener("click", (event) => {
 });
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => {
-  tool = button.dataset.tool;
-  document.querySelectorAll("[data-tool]").forEach((item) => item.classList.toggle("active", item === button));
+  setTool(button.dataset.tool);
 }));
+
+function setTool(nextTool) {
+  tool = nextTool;
+  document.querySelectorAll("[data-tool]").forEach((item) => item.classList.toggle("active", item.dataset.tool === tool));
+}
 
 Object.values(propertyInputs).forEach((input) => input.addEventListener("input", () => {
   const object = selectedObject();
@@ -196,6 +200,35 @@ document.querySelector("#scene-import").addEventListener("change", async (event)
   } catch (error) {
     window.alert(error.message);
   }
+});
+
+async function importSpriteImages(files) {
+  if (!files.length) return;
+  try {
+    const [asset] = await window.InterverseAssets.importImages(files);
+    refreshSpriteAssets();
+    spriteAssetSelect.value = asset.id;
+    setTool("sprite");
+    document.querySelector("#save-status").textContent = `${asset.name} ready to place`;
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+document.querySelector("#add-sprite-asset").addEventListener("click", () => document.querySelector("#sprite-image-import").click());
+document.querySelector("#sprite-image-import").addEventListener("change", async (event) => {
+  const files = Array.from(event.target.files);
+  event.target.value = "";
+  await importSpriteImages(files);
+});
+const spriteDropZone = document.querySelector("#sprite-drop-zone");
+spriteDropZone.addEventListener("dragenter", (event) => { event.preventDefault(); spriteDropZone.classList.add("is-dragging"); });
+spriteDropZone.addEventListener("dragover", (event) => event.preventDefault());
+spriteDropZone.addEventListener("dragleave", () => spriteDropZone.classList.remove("is-dragging"));
+spriteDropZone.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  spriteDropZone.classList.remove("is-dragging");
+  await importSpriteImages(Array.from(event.dataTransfer.files));
 });
 
 document.querySelector("#project-name").textContent = project.name;

@@ -175,9 +175,7 @@ document.querySelector("#project-import").addEventListener("change", async (even
   }
 });
 
-async function handleAssetImport(event) {
-  const files = Array.from(event.target.files);
-  event.target.value = "";
+async function importAssetFiles(files) {
   if (!files.length) return;
   try {
     await window.InterverseAssets.importImages(files);
@@ -188,12 +186,30 @@ async function handleAssetImport(event) {
   }
 }
 
+async function handleAssetImport(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = "";
+  await importAssetFiles(files);
+}
+
 document.querySelector("#import-assets-button").addEventListener("click", () => document.querySelector("#asset-import").click());
 document.querySelectorAll("[data-import-assets]").forEach((button) => button.addEventListener("click", () => document.querySelector("#asset-import").click()));
 document.querySelector("#asset-import").addEventListener("change", handleAssetImport);
+const assetDropZone = document.querySelector("#asset-drop-zone");
+assetDropZone.addEventListener("click", () => document.querySelector("#asset-import").click());
+assetDropZone.addEventListener("dragenter", (event) => { event.preventDefault(); assetDropZone.classList.add("is-dragging"); });
+assetDropZone.addEventListener("dragover", (event) => event.preventDefault());
+assetDropZone.addEventListener("dragleave", () => assetDropZone.classList.remove("is-dragging"));
+assetDropZone.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  assetDropZone.classList.remove("is-dragging");
+  await importAssetFiles(Array.from(event.dataTransfer.files));
+});
 
 renderTemplates();
 renderProjects();
 renderAssets();
 setupInstallPrompt();
+const requestedView = new URLSearchParams(window.location.search).get("view");
+if (["projects", "templates", "assets", "learn"].includes(requestedView)) showView(requestedView);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));
