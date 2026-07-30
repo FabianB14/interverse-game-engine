@@ -1,4 +1,5 @@
 const TILE_SIZE = 48;
+const spriteImages = new Map();
 
 function intersects(a, b) {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
@@ -39,6 +40,17 @@ function drawRoundedRect(context, x, y, width, height, radius, color) {
   context.roundRect(x, y, width, height, radius);
   context.fillStyle = color;
   context.fill();
+}
+
+function drawSprite(context, sprite) {
+  if (!sprite.source) return;
+  let image = spriteImages.get(sprite.source);
+  if (!image) {
+    image = new Image();
+    image.src = sprite.source;
+    spriteImages.set(sprite.source, image);
+  }
+  if (image.complete && image.naturalWidth > 0) context.drawImage(image, sprite.x, sprite.y, sprite.width, sprite.height);
 }
 
 async function loadJson(url, description) {
@@ -85,6 +97,8 @@ function drawScene(context, scene, state) {
   drawWorld(context, scene, camera);
   context.save();
   context.translate(-camera.x, -camera.y);
+
+  for (const sprite of scene.sprites || []) drawSprite(context, sprite);
 
   for (const solid of scene.solids) {
     drawRoundedRect(context, solid.x, solid.y, solid.width, solid.height, 8, scene.palette.wall);

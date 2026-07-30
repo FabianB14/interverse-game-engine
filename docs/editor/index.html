@@ -25,6 +25,8 @@
           <button class="tool-button" type="button" data-tool="wall">Wall</button>
           <button class="tool-button" type="button" data-tool="beacon">Beacon</button>
           <button class="tool-button" type="button" data-tool="goal">Goal</button>
+          <button class="tool-button" type="button" data-tool="sprite">Sprite</button>
+          <label class="asset-select" for="sprite-asset">Sprite image<select id="sprite-asset"><option value="">Choose an image</option></select></label>
         </div>
       </aside>
       <section class="scene-workspace" aria-label="Scene workspace">
@@ -45,6 +47,7 @@
       </aside>
     </main>
     <input id="scene-import" type="file" accept="application/json,.json,.interverse.json" hidden />
+    <script src="../asset-library.js"></script>
     <script src="editor.js"></script>
   </body>
 </html>

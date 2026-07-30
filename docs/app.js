@@ -75,6 +75,32 @@ function renderTemplates() {
   });
 }
 
+function renderAssets() {
+  const assets = window.InterverseAssets.list();
+  const assetGrid = document.querySelector("#asset-grid");
+  assetGrid.replaceChildren();
+  document.querySelector("#asset-count").textContent = `${assets.length} ${assets.length === 1 ? "image" : "images"}`;
+  document.querySelector("#asset-empty-state").hidden = assets.length !== 0;
+  assets.forEach((asset) => {
+    const card = document.createElement("article");
+    card.className = "asset-card";
+    const image = document.createElement("img");
+    image.src = asset.source;
+    image.alt = asset.name;
+    const content = document.createElement("div");
+    content.className = "asset-card-content";
+    const name = document.createElement("h3");
+    name.textContent = asset.name;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.addEventListener("click", () => { window.InterverseAssets.remove(asset.id); renderAssets(); });
+    content.append(name, remove);
+    card.append(image, content);
+    assetGrid.append(card);
+  });
+}
+
 function openProjectDialog(templateId = "platformer") {
   projectForm.reset();
   const option = document.querySelector(`input[name="template"][value="${templateId}"]`);
@@ -90,7 +116,7 @@ function showView(view) {
     section.hidden = !active;
     section.classList.toggle("active", active);
   });
-  document.querySelector("#view-title").textContent = ({ projects: "Your projects", templates: "Templates", learn: "Learn" })[view];
+  document.querySelector("#view-title").textContent = ({ projects: "Your projects", templates: "Templates", assets: "Asset library", learn: "Learn" })[view];
 }
 
 function setupInstallPrompt() {
@@ -149,7 +175,25 @@ document.querySelector("#project-import").addEventListener("change", async (even
   }
 });
 
+async function handleAssetImport(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = "";
+  if (!files.length) return;
+  try {
+    await window.InterverseAssets.importImages(files);
+    renderAssets();
+    showView("assets");
+  } catch (error) {
+    window.alert(error.message);
+  }
+}
+
+document.querySelector("#import-assets-button").addEventListener("click", () => document.querySelector("#asset-import").click());
+document.querySelectorAll("[data-import-assets]").forEach((button) => button.addEventListener("click", () => document.querySelector("#asset-import").click()));
+document.querySelector("#asset-import").addEventListener("change", handleAssetImport);
+
 renderTemplates();
 renderProjects();
+renderAssets();
 setupInstallPrompt();
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js"));

@@ -12,8 +12,8 @@ Scope:
 - Portable project export and import. Completed.
 - Browser scene editor with runtime preview. Completed.
 - Browser-reference runtime with a playable example scene. Completed.
-- Asset browser
-- Sprite rendering
+- Asset browser. Completed for browser image imports.
+- Sprite rendering. Completed for the web runtime.
 - Basic transform tools
 - Keyboard and mouse input
 - Run button
