@@ -1,6 +1,8 @@
-const sceneKey = "interverse-editor-scene-v0";
+const projectStorageKey = "interverse-studio-projects";
+const sceneStoragePrefix = "interverse-editor-scene-v0:";
 const previewKey = "interverse-preview-scene";
 const gridSize = 32;
+const projectId = new URLSearchParams(window.location.search).get("project");
 const canvas = document.querySelector("#scene-canvas");
 const context = canvas.getContext("2d");
 const propertyForm = document.querySelector("#object-properties");
@@ -11,6 +13,12 @@ const propertyInputs = {
   width: document.querySelector("#property-width"),
   height: document.querySelector("#property-height")
 };
+
+function readProjects() { try { return JSON.parse(localStorage.getItem(projectStorageKey)) || []; } catch { return []; } }
+function saveProjects(projects) { localStorage.setItem(projectStorageKey, JSON.stringify(projects)); }
+function activeProject() { return readProjects().find((project) => project.id === projectId) || { id: null, name: "Signal Garden", templateId: "top-down" }; }
+function activeSceneKey() { return projectId ? `${sceneStoragePrefix}${projectId}` : "interverse-editor-scene-v0"; }
+let project = activeProject();
 
 const defaultScene = {
   world: { width: 960, height: 640 },
@@ -26,8 +34,29 @@ let tool = "select";
 let selected = null;
 
 function clone(value) { return JSON.parse(JSON.stringify(value)); }
-function loadScene() { try { return JSON.parse(localStorage.getItem(sceneKey)) || clone(defaultScene); } catch { return clone(defaultScene); } }
-function saveScene() { localStorage.setItem(sceneKey, JSON.stringify(scene)); document.querySelector("#save-status").textContent = "Saved locally"; }
+function loadScene() { try { return JSON.parse(localStorage.getItem(activeSceneKey())) || clone(defaultScene); } catch { return clone(defaultScene); } }
+function saveScene() { localStorage.setItem(activeSceneKey(), JSON.stringify(scene)); document.querySelector("#save-status").textContent = "Saved in this browser"; }
+function fileName(name) { return name.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "interverse-project"; }
+function downloadProject() {
+  const packageData = { format: "interverse.project/v1", name: project.name, template: project.templateId || "top-down", entryScene: "scenes/main.scene.json", scene };
+  const downloadUrl = URL.createObjectURL(new Blob([JSON.stringify(packageData, null, 2)], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = `${fileName(project.name)}.interverse.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+  document.querySelector("#save-status").textContent = "Project exported";
+}
+
+function importProject(packageData) {
+  if (packageData.format !== "interverse.project/v1" || !packageData.scene || typeof packageData.name !== "string") {
+    throw new Error("Choose an Interverse project export with its scene included.");
+  }
+  const newProject = { id: crypto.randomUUID(), name: packageData.name.trim() || "Imported project", template: "Top-down Adventure", templateId: packageData.template || "top-down", createdAt: Date.now() };
+  saveProjects([newProject, ...readProjects()]);
+  localStorage.setItem(`${sceneStoragePrefix}${newProject.id}`, JSON.stringify(packageData.scene));
+  window.location.assign(`?project=${encodeURIComponent(newProject.id)}`);
+}
 function snap(value) { return Math.max(0, Math.min(Math.round(value / gridSize) * gridSize, 928)); }
 function rectangleContains(rectangle, point) { return point.x >= rectangle.x && point.x <= rectangle.x + rectangle.width && point.y >= rectangle.y && point.y <= rectangle.y + rectangle.height; }
 function selectedObject() { if (!selected) return null; if (selected.type === "player") return scene.player; if (selected.type === "goal") return scene.goal; return scene[`${selected.type}s`][selected.index]; }
@@ -115,5 +144,19 @@ document.querySelector("#preview-scene").addEventListener("click", () => {
   window.location.assign("../play/");
 });
 
+document.querySelector("#export-scene").addEventListener("click", downloadProject);
+document.querySelector("#import-scene").addEventListener("click", () => document.querySelector("#scene-import").click());
+document.querySelector("#scene-import").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  event.target.value = "";
+  if (!file) return;
+  try {
+    importProject(JSON.parse(await file.text()));
+  } catch (error) {
+    window.alert(error.message);
+  }
+});
+
+document.querySelector("#project-name").textContent = project.name;
 refreshInspector();
 draw();
