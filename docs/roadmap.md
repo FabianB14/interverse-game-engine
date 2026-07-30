@@ -14,7 +14,8 @@ Scope:
 - Browser-reference runtime with a playable example scene. Completed.
 - Asset browser. Completed for browser image imports.
 - Sprite rendering. Completed for the web runtime.
-- Basic transform tools
+- Basic transform tools. Completed.
+- Scene hierarchy, object naming, duplication, undo/redo, keyboard shortcuts, and validation. Completed.
 - Keyboard and mouse input
 - Run button
 - Example scene

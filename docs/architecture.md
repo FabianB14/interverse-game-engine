@@ -69,7 +69,7 @@ Its initial contract is intentionally narrow:
 
 ## First Scene Editor
 
-`docs/editor/` is the first creator-facing scene editor. It edits a scene in the same JSON shape consumed by the runtime, stores a separate working copy for each Studio project in the browser, and opens that exact data in the web runtime preview. It can also export and restore a portable project file, keeping the initial workflow usable without a backend. The toolset is deliberately focused on selection, walls, collectibles, and a goal so the editor validates the workflow without hiding it behind a large tool surface.
+`docs/editor/` is the first creator-facing scene editor. It edits a scene in the same JSON shape consumed by the runtime, stores a separate working copy for each Studio project in the browser, and opens that exact data in the web runtime preview. It can also export and restore a portable project file, keeping the initial workflow usable without a backend. A scene hierarchy, inspector naming, duplication, history, keyboard shortcuts, and validation give the initial toolset a consistent authoring foundation without hiding it behind a large tool surface.
 
 ## First Asset Path
 

@@ -15,7 +15,7 @@
     <header class="editor-header">
       <a class="brand" href="../"><img src="../assets/interverse-mark.svg" alt="" width="32" height="32" />Interverse</a>
       <div><p class="eyebrow">Scene editor</p><h1 id="project-name">Signal Garden</h1></div>
-      <div class="header-actions"><button class="secondary-button" id="import-scene" type="button">Import</button><button class="secondary-button" id="export-scene" type="button">Export</button><button class="secondary-button" id="reset-scene" type="button">Reset</button><button class="primary-button" id="preview-scene" type="button">Preview</button></div>
+      <div class="header-actions"><button class="icon-button" id="undo-scene" type="button" aria-label="Undo" title="Undo">&#8630;</button><button class="icon-button" id="redo-scene" type="button" aria-label="Redo" title="Redo">&#8631;</button><button class="secondary-button" id="import-scene" type="button">Import</button><button class="secondary-button" id="export-scene" type="button">Export</button><button class="secondary-button" id="reset-scene" type="button">Reset</button><button class="primary-button" id="preview-scene" type="button">Preview</button></div>
     </header>
     <main class="editor-layout">
       <aside class="tool-panel" aria-label="Scene tools">
@@ -31,20 +31,23 @@
           <button class="sprite-drop-zone" id="sprite-drop-zone" type="button">Drop image here</button>
         </div>
       </aside>
+      <aside class="hierarchy-panel" aria-label="Scene hierarchy"><p class="panel-label">Hierarchy</p><div id="scene-hierarchy" class="scene-hierarchy"></div></aside>
       <section class="scene-workspace" aria-label="Scene workspace">
         <canvas id="scene-canvas" width="960" height="640" aria-label="Editable game scene"></canvas>
         <p id="save-status" class="save-status" aria-live="polite">Saved locally</p>
+        <div id="scene-validation" class="scene-validation" hidden aria-live="polite"></div>
       </section>
       <aside class="inspector-panel" aria-label="Inspector">
         <p class="panel-label">Inspector</p>
         <div id="empty-inspector" class="empty-inspector">Select an object</div>
         <form id="object-properties" hidden>
           <p id="object-type" class="object-type"></p>
+          <label>Name<input id="property-name" type="text" maxlength="48" /></label>
           <label>X<input id="property-x" type="number" step="1" /></label>
           <label>Y<input id="property-y" type="number" step="1" /></label>
           <label>Width<input id="property-width" type="number" min="16" step="1" /></label>
           <label>Height<input id="property-height" type="number" min="16" step="1" /></label>
-          <button class="danger-button" id="delete-object" type="button">Delete</button>
+          <button class="secondary-button" id="duplicate-object" type="button">Duplicate</button><button class="danger-button" id="delete-object" type="button">Delete</button>
         </form>
       </aside>
     </main>
