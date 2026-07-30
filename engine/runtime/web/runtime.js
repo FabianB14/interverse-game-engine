@@ -6,16 +6,26 @@ function intersects(a, b) {
 }
 
 class Input {
-  constructor(target = window) {
+  constructor(target = window, touchControls) {
     this.keys = new Set();
+    this.touchDirections = new Set();
     target.addEventListener("keydown", (event) => this.keys.add(event.key.toLowerCase()));
     target.addEventListener("keyup", (event) => this.keys.delete(event.key.toLowerCase()));
+    touchControls?.querySelectorAll("[data-direction]").forEach((button) => {
+      const direction = button.dataset.direction;
+      const activate = (event) => { event.preventDefault(); this.touchDirections.add(direction); };
+      const deactivate = (event) => { event.preventDefault(); this.touchDirections.delete(direction); };
+      button.addEventListener("pointerdown", activate);
+      button.addEventListener("pointerup", deactivate);
+      button.addEventListener("pointercancel", deactivate);
+      button.addEventListener("pointerleave", deactivate);
+    });
   }
 
   direction() {
     return {
-      x: Number(this.keys.has("d") || this.keys.has("arrowright")) - Number(this.keys.has("a") || this.keys.has("arrowleft")),
-      y: Number(this.keys.has("s") || this.keys.has("arrowdown")) - Number(this.keys.has("w") || this.keys.has("arrowup"))
+      x: Number(this.keys.has("d") || this.keys.has("arrowright") || this.touchDirections.has("right")) - Number(this.keys.has("a") || this.keys.has("arrowleft") || this.touchDirections.has("left")),
+      y: Number(this.keys.has("s") || this.keys.has("arrowdown") || this.touchDirections.has("down")) - Number(this.keys.has("w") || this.keys.has("arrowup") || this.touchDirections.has("up"))
     };
   }
 }
@@ -138,13 +148,13 @@ function drawScene(context, scene, state) {
   context.fillText(state.complete ? "Signal restored" : "Reach the signal gate", 29, 60);
 }
 
-export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: suppliedScene, onStateChange = () => {} }) {
+export async function bootTopDownGame({ canvas, projectUrl, sceneUrl, scene: suppliedScene, touchControls, onStateChange = () => {} }) {
   if (!projectUrl && !sceneUrl && !suppliedScene) throw new Error("A project, scene URL, or scene object is required.");
   const scene = suppliedScene || (projectUrl
     ? (await loadProject(projectUrl)).scene
     : await loadJson(sceneUrl, "scene"));
   const context = canvas.getContext("2d");
-  const input = new Input();
+  const input = new Input(window, touchControls);
   const state = {
     player: { ...scene.player },
     collectibles: scene.collectibles.map((item) => ({ ...item })),

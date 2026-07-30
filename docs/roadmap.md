@@ -41,7 +41,7 @@ User outcome: prepare a commercial mobile game release.
 
 Scope:
 
-- Touch controls
+- Touch controls for browser previews. Completed.
 - Mobile performance profiling
 - App icons and splash screen flow
 - Android packaging
